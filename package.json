@@ -9,10 +9,17 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:seed": "tsx scripts/db-seed.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "next": "^15.1.0",
+    "postgres": "^3.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -21,10 +28,12 @@
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.15.0",
     "eslint-config-next": "^15.1.0",
     "prettier": "^3.3.3",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.6.3"
   }
 }
