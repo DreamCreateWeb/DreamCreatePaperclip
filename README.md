@@ -16,11 +16,17 @@ A board user collects a clinic intake → the clinic pays $200 via Stripe Checko
 
 ## Routes
 
-| Path           | Purpose                                          |
-| -------------- | ------------------------------------------------ |
-| `/`            | Admin landing (gated — auth lands in DRE-18)     |
-| `/onboard`     | Public clinic onboarding intake (DRE-20)         |
-| `/api/health`  | Liveness check — returns 200 JSON                |
+| Path                          | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `/`                           | Public marketing landing                      |
+| `/onboard`                    | Public clinic onboarding intake (DRE-20)      |
+| `/login`                      | Operator sign-in (magic link request)         |
+| `/login/check-email`          | Generic post-request confirmation             |
+| `/admin`                      | Admin console (gated)                         |
+| `/api/health`                 | Liveness check — returns 200 JSON             |
+| `/api/admin/auth/request`     | POST — issues a magic link if email allowed   |
+| `/api/admin/auth/callback`    | GET — consumes a magic link, sets session     |
+| `/api/admin/auth/logout`      | POST/GET — revokes session, clears cookie     |
 
 ## Local development
 
@@ -59,6 +65,30 @@ When you don't have Docker, point `DATABASE_URL` at any reachable Postgres 16 in
 - **Migrations**: checked into [`drizzle/`](./drizzle). Generate new ones with `npm run db:generate`; never edit existing migration files.
 - **Local Postgres**: [`docker-compose.yml`](./docker-compose.yml) runs Postgres 16 on `localhost:5432` with credentials matching `.env.example`.
 - **Production**: Railway Postgres. Set `DATABASE_URL` in Railway and Vercel; the same migrate command (`npm run db:migrate`) applies migrations on deploy.
+
+## Admin auth
+
+Magic-link auth, hand-rolled (no NextAuth dependency).
+
+- **Allowlist**: `ADMIN_EMAILS` is a comma-separated list of operator emails. Anything outside the list silently 200s but never receives a link.
+- **Session signing**: `ADMIN_SESSION_SECRET` (min 32 chars). Generate with `openssl rand -base64 48`.
+- **Mailer**: if `RESEND_API_KEY` and `ADMIN_LOGIN_EMAIL_FROM` are set, links are sent via Resend. Otherwise, links print to the server console — fine for local dev.
+- **Sessions**: 30-day TTL, stored hashed in `admin_sessions`. Cookie is `dc_admin_session`, HMAC-signed, httpOnly, lax, secure in prod.
+- **Magic link tokens**: 15-minute TTL, single-use, stored hashed in `admin_login_tokens`.
+- **Middleware**: [`middleware.ts`](./middleware.ts) gates `/admin/:path*`. Public surfaces (`/`, `/onboard`, `/api/health`, `/api/stripe/webhook`) stay open.
+
+### Local sign-in (dev)
+
+```bash
+ADMIN_EMAILS=you@example.com \
+ADMIN_SESSION_SECRET="$(openssl rand -base64 48)" \
+npm run dev
+```
+
+1. Visit http://localhost:3000/login.
+2. Enter your email — a link prints to the dev server console.
+3. Click the link → you land on `/admin`.
+4. Sign out from the admin header.
 
 ## Environment
 

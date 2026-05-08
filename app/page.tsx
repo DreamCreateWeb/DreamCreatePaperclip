@@ -16,8 +16,11 @@ export default function HomePage() {
         .
       </p>
       <p className="mt-12 text-sm text-ink-muted">
-        Sign-in is gated. If you are a Dream Create operator, request access
-        from the CEO.
+        Sign-in is gated.{" "}
+        <a className="text-accent underline underline-offset-4" href="/login">
+          Operator sign-in
+        </a>
+        . If you don&rsquo;t have access, request it from the CEO.
       </p>
     </main>
   );
