@@ -94,6 +94,19 @@ npm run dev
 
 See [`.env.example`](./.env.example) for the full list of variables this platform expects. Secrets are stored in Railway and Vercel — never commit a real `.env`.
 
+## Stripe billing
+
+Live catalog (account `acct_1TUrAWQ59dAubGMS`):
+
+| Item    | ID                                | Detail                                                                  |
+| ------- | --------------------------------- | ----------------------------------------------------------------------- |
+| Product | `prod_UTszokuJ2IUrVy`             | Dental Clinic Website (Dream Create)                                    |
+| Price   | `price_1TUvDtQ59dAubGMSkrqRZevL`  | $200.00 USD / month, recurring — wired in `STRIPE_PRICE_CLINIC_MONTHLY` |
+
+The legacy `$4,600/mo` Symmetry product (`prod_UTr5uTOttH0crf`) is archived and out of scope.
+
+Set `STRIPE_PRICE_CLINIC_MONTHLY` to the live price ID in Railway and Vercel before Phase 2's Checkout flow can charge a clinic.
+
 ## Deployment
 
 Vercel project is linked to `DreamCreateWeb/DreamCreatePaperclip`. `main` deploys to production. Preview deploys are created automatically for PRs.
