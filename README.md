@@ -103,7 +103,11 @@ Each clinic gets an owner-side dashboard at `/portal` (separate from `/admin`).
 - **Cookie**: `dc_owner_session` (separate from admin), HMAC-signed with the same `ADMIN_SESSION_SECRET`.
 - **Tables**: `clinic_owner_users`, `clinic_owner_login_tokens`, `clinic_owner_sessions`. Same 30-day session TTL, 15-minute token TTL as admin.
 - **Mailer**: subject is "Sign in to {Clinic Name}". Uses Resend if configured, otherwise console.
-- **Phase A pages**: dashboard, contact-message inbox, site editor (name, phone, address, hours, social). Site edits trigger `revalidatePath` for the public site.
+- **Pages**: dashboard, contact-message inbox, site editor (basics / services / team / brand), settings.
+- **Site editor sub-nav**: `/portal/site` (basics) → `/portal/site/services` → `/portal/site/team` → `/portal/site/brand`. Each section has its own PATCH endpoint under `/api/owner/clinic/*` and triggers `revalidatePath` for the public clinic site on save.
+- **Brand editor**: live preview of header, primary button, and accent chips updates as colors change. Backed by `resolveBrand` so the preview matches what the public site renders.
+- **Settings** (`/portal/settings`): change the public contact email, and "Sign out everywhere" which revokes all sessions for the owner and clears the local cookie.
+- **Admin → owner invite**: admin page at `/admin/clinics` lists every clinic with its current owner. Admins can assign or replace the owner email, which sends a magic-link sign-in to the new address. Backed by `POST /api/admin/clinics/:clinicId/owner` with the same one-email-one-clinic uniqueness rule.
 
 After running `npm run db:seed`, the seeded clinic at `smile-bright-rogers` has an owner `hello@smilebright.example` — request a magic link from `/portal/login` with that address and the link prints to the dev console.
 

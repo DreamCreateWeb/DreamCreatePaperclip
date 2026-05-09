@@ -168,6 +168,21 @@ export async function revokeOwnerSession(sessionId: string): Promise<void> {
     );
 }
 
+export async function revokeAllOwnerSessions(userId: string): Promise<number> {
+  const db = getDb();
+  const rows = await db
+    .update(clinicOwnerSessions)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(
+        eq(clinicOwnerSessions.userId, userId),
+        isNull(clinicOwnerSessions.revokedAt),
+      ),
+    )
+    .returning({ id: clinicOwnerSessions.id });
+  return rows.length;
+}
+
 export async function recordOwnerLogin(userId: string): Promise<void> {
   const db = getDb();
   await db

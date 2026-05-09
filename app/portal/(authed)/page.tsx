@@ -91,35 +91,63 @@ export default async function OwnerDashboardPage() {
         <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
           Manage your site
         </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Link
+        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <DashboardLink
             href="/portal/site"
-            className="group rounded-card border border-rule bg-white p-6 transition hover:border-ink"
-          >
-            <p className="text-sm font-medium text-ink">Edit site content</p>
-            <p className="mt-2 text-sm text-ink-muted">
-              Update your hours, address, phone, and social links. Changes go
-              live immediately.
-            </p>
-            <p className="mt-4 text-xs font-medium uppercase tracking-[0.16em] text-accent group-hover:underline">
-              Open editor →
-            </p>
-          </Link>
-          <Link
+            title="Basics"
+            description="Hours, address, phone, social links."
+          />
+          <DashboardLink
+            href="/portal/site/services"
+            title="Services"
+            description="What you offer, in priority order."
+          />
+          <DashboardLink
+            href="/portal/site/team"
+            title="Team"
+            description="Doctors and staff with photos and bios."
+          />
+          <DashboardLink
+            href="/portal/site/brand"
+            title="Brand"
+            description="Colors and logo with live preview."
+          />
+          <DashboardLink
             href="/portal/messages"
-            className="group rounded-card border border-rule bg-white p-6 transition hover:border-ink"
-          >
-            <p className="text-sm font-medium text-ink">Patient messages</p>
-            <p className="mt-2 text-sm text-ink-muted">
-              Read messages submitted through your contact form.
-            </p>
-            <p className="mt-4 text-xs font-medium uppercase tracking-[0.16em] text-accent group-hover:underline">
-              View inbox →
-            </p>
-          </Link>
+            title="Patient messages"
+            description="Submissions from your contact form."
+          />
+          <DashboardLink
+            href="/portal/settings"
+            title="Account settings"
+            description="Contact email and session controls."
+          />
         </div>
       </section>
     </div>
+  );
+}
+
+function DashboardLink({
+  href,
+  title,
+  description,
+}: {
+  href: Route;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-card border border-rule bg-white p-6 transition hover:border-ink"
+    >
+      <p className="text-sm font-medium text-ink">{title}</p>
+      <p className="mt-2 text-sm text-ink-muted">{description}</p>
+      <p className="mt-4 text-xs font-medium uppercase tracking-[0.16em] text-accent group-hover:underline">
+        Open →
+      </p>
+    </Link>
   );
 }
 

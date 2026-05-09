@@ -1,7 +1,11 @@
-type SearchParams = Promise<{ error?: string }>;
+type SearchParams = Promise<{ error?: string; signed_out?: string }>;
 
 const ERROR_COPY: Record<string, string> = {
   invalid: "That sign-in link is invalid or has expired. Try requesting a new one.",
+};
+
+const NOTICE_COPY: Record<string, string> = {
+  all: "Signed out of every device. Request a new link below to sign back in.",
 };
 
 export default async function OwnerLoginPage({
@@ -11,6 +15,7 @@ export default async function OwnerLoginPage({
 }) {
   const params = await searchParams;
   const error = params.error ? ERROR_COPY[params.error] : null;
+  const notice = params.signed_out ? NOTICE_COPY[params.signed_out] : null;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-24">
@@ -28,6 +33,10 @@ export default async function OwnerLoginPage({
       {error ? (
         <div className="mt-6 rounded-card border border-rule bg-canvas px-4 py-3 text-sm text-ink">
           {error}
+        </div>
+      ) : notice ? (
+        <div className="mt-6 rounded-card border border-rule bg-canvas px-4 py-3 text-sm text-ink">
+          {notice}
         </div>
       ) : null}
 

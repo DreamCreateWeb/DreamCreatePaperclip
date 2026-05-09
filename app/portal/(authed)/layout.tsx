@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/portal", label: "Dashboard" },
   { href: "/portal/messages", label: "Messages" },
   { href: "/portal/site", label: "Site content" },
+  { href: "/portal/settings", label: "Settings" },
 ] as const satisfies ReadonlyArray<{ href: Route; label: string }>;
 
 export default async function PortalAuthedLayout({

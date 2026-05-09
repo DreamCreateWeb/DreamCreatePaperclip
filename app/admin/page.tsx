@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
@@ -35,15 +36,31 @@ export default async function AdminHomePage() {
 
       <section className="mt-16">
         <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
+          Manage
+        </h2>
+        <ul className="mt-4 space-y-3 text-sm text-ink">
+          <li>
+            <Link
+              href="/admin/clinics"
+              className="group block rounded-card border border-rule bg-white px-5 py-4 transition hover:border-ink"
+            >
+              <span className="font-medium">Clinics & owners</span>
+              <span className="block text-ink-muted">
+                Assign or replace the portal owner for any clinic.
+              </span>
+              <span className="mt-2 block text-xs font-medium uppercase tracking-[0.16em] text-accent group-hover:underline">
+                Open →
+              </span>
+            </Link>
+          </li>
+        </ul>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
           Coming next
         </h2>
         <ul className="mt-4 space-y-3 text-sm text-ink">
-          <li className="rounded-card border border-rule bg-white px-5 py-4">
-            <span className="font-medium">Clinic dashboard</span>
-            <span className="block text-ink-muted">
-              List clinics, status pills, primary actions.
-            </span>
-          </li>
           <li className="rounded-card border border-rule bg-white px-5 py-4">
             <span className="font-medium">Onboarding inbox</span>
             <span className="block text-ink-muted">
