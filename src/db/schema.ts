@@ -253,6 +253,67 @@ export const adminSessions = pgTable(
   ],
 );
 
+export const clinicOwnerUsers = pgTable(
+  "clinic_owner_users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    name: text("name"),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("clinic_owner_users_email_unique").on(t.email),
+    index("clinic_owner_users_clinic_idx").on(t.clinicId),
+  ],
+);
+
+export const clinicOwnerLoginTokens = pgTable(
+  "clinic_owner_login_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    requestedIp: text("requested_ip"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("clinic_owner_login_tokens_token_hash_unique").on(t.tokenHash),
+    index("clinic_owner_login_tokens_email_idx").on(t.email),
+    index("clinic_owner_login_tokens_expires_idx").on(t.expiresAt),
+  ],
+);
+
+export const clinicOwnerSessions = pgTable(
+  "clinic_owner_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => clinicOwnerUsers.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("clinic_owner_sessions_token_hash_unique").on(t.tokenHash),
+    index("clinic_owner_sessions_user_idx").on(t.userId),
+    index("clinic_owner_sessions_expires_idx").on(t.expiresAt),
+  ],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type NewClinic = typeof clinics.$inferInsert;
 export type OnboardingSubmission = typeof onboardingSubmissions.$inferSelect;
@@ -270,3 +331,10 @@ export type AdminSession = typeof adminSessions.$inferSelect;
 export type NewAdminSession = typeof adminSessions.$inferInsert;
 export type ClinicContactMessage = typeof clinicContactMessages.$inferSelect;
 export type NewClinicContactMessage = typeof clinicContactMessages.$inferInsert;
+export type ClinicOwnerUser = typeof clinicOwnerUsers.$inferSelect;
+export type NewClinicOwnerUser = typeof clinicOwnerUsers.$inferInsert;
+export type ClinicOwnerLoginToken = typeof clinicOwnerLoginTokens.$inferSelect;
+export type NewClinicOwnerLoginToken =
+  typeof clinicOwnerLoginTokens.$inferInsert;
+export type ClinicOwnerSession = typeof clinicOwnerSessions.$inferSelect;
+export type NewClinicOwnerSession = typeof clinicOwnerSessions.$inferInsert;

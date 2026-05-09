@@ -1,9 +1,10 @@
 import "dotenv/config";
 
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-import { clinics } from "../src/db/schema";
+import { clinicOwnerUsers, clinics } from "../src/db/schema";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -89,6 +90,31 @@ async function main() {
     console.log(`Inserted clinic ${clinic.slug} (${clinic.id}).`);
   } else {
     console.log("Clinic already seeded; skipped.");
+  }
+
+  const seededOwnerEmail = "hello@smilebright.example";
+  const [seededClinic] = await db
+    .select({ id: clinics.id })
+    .from(clinics)
+    .where(eq(clinics.slug, "smile-bright-rogers"))
+    .limit(1);
+  if (seededClinic) {
+    const [owner] = await db
+      .insert(clinicOwnerUsers)
+      .values({
+        clinicId: seededClinic.id,
+        email: seededOwnerEmail,
+        name: "Smile Bright Owner",
+      })
+      .onConflictDoNothing({ target: clinicOwnerUsers.email })
+      .returning({ id: clinicOwnerUsers.id, email: clinicOwnerUsers.email });
+    if (owner) {
+      console.log(
+        `Inserted clinic owner ${owner.email} for clinic ${seededClinic.id}.`,
+      );
+    } else {
+      console.log("Clinic owner already seeded; skipped.");
+    }
   }
 
   await client.end({ timeout: 5 });

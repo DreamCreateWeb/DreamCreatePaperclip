@@ -5,13 +5,26 @@ export type LoginEmail = {
   url: string;
 };
 
+export type OwnerLoginEmail = LoginEmail & {
+  clinicName: string;
+};
+
 export interface Mailer {
   sendLoginLink(email: LoginEmail): Promise<void>;
+  sendOwnerLoginLink(email: OwnerLoginEmail): Promise<void>;
 }
 
 export class ConsoleMailer implements Mailer {
   async sendLoginLink(email: LoginEmail): Promise<void> {
     const banner = "===== Dream Create admin magic link =====";
+    console.log(`\n${banner}`);
+    console.log(`To:   ${normalizeEmail(email.to)}`);
+    console.log(`Link: ${email.url}`);
+    console.log(`${"=".repeat(banner.length)}\n`);
+  }
+
+  async sendOwnerLoginLink(email: OwnerLoginEmail): Promise<void> {
+    const banner = `===== ${email.clinicName} portal magic link =====`;
     console.log(`\n${banner}`);
     console.log(`To:   ${normalizeEmail(email.to)}`);
     console.log(`Link: ${email.url}`);
@@ -25,7 +38,12 @@ class ResendMailer implements Mailer {
     private readonly from: string,
   ) {}
 
-  async sendLoginLink({ to, url }: LoginEmail): Promise<void> {
+  private async send(payload: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+  }): Promise<void> {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -34,16 +52,38 @@ class ResendMailer implements Mailer {
       },
       body: JSON.stringify({
         from: this.from,
-        to: normalizeEmail(to),
-        subject: "Your Dream Create admin sign-in link",
-        text: `Sign in to Dream Create admin:\n\n${url}\n\nThis link expires in 15 minutes. If you didn't request it, ignore this email.`,
-        html: `<p>Sign in to Dream Create admin:</p><p><a href="${url}">${url}</a></p><p style="color:#666">This link expires in 15 minutes. If you didn't request it, ignore this email.</p>`,
+        to: normalizeEmail(payload.to),
+        subject: payload.subject,
+        text: payload.text,
+        html: payload.html,
       }),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "<no body>");
       throw new Error(`Resend send failed: ${res.status} ${detail}`);
     }
+  }
+
+  async sendLoginLink({ to, url }: LoginEmail): Promise<void> {
+    await this.send({
+      to,
+      subject: "Your Dream Create admin sign-in link",
+      text: `Sign in to Dream Create admin:\n\n${url}\n\nThis link expires in 15 minutes. If you didn't request it, ignore this email.`,
+      html: `<p>Sign in to Dream Create admin:</p><p><a href="${url}">${url}</a></p><p style="color:#666">This link expires in 15 minutes. If you didn't request it, ignore this email.</p>`,
+    });
+  }
+
+  async sendOwnerLoginLink({
+    to,
+    url,
+    clinicName,
+  }: OwnerLoginEmail): Promise<void> {
+    await this.send({
+      to,
+      subject: `Sign in to ${clinicName}`,
+      text: `Sign in to your ${clinicName} owner portal:\n\n${url}\n\nThis link expires in 15 minutes. If you didn't request it, ignore this email.`,
+      html: `<p>Sign in to your <strong>${clinicName}</strong> owner portal:</p><p><a href="${url}">${url}</a></p><p style="color:#666">This link expires in 15 minutes. If you didn't request it, ignore this email.</p>`,
+    });
   }
 }
 

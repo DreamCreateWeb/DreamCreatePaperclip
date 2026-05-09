@@ -66,7 +66,7 @@ When you don't have Docker, point `DATABASE_URL` at any reachable Postgres 16 in
 ## Database
 
 - **ORM**: [Drizzle](https://orm.drizzle.team) over [postgres-js](https://github.com/porsager/postgres).
-- **Schema**: [`src/db/schema.ts`](./src/db/schema.ts) — `clinics`, `onboarding_submissions`, `provisioning_runs`, `audit_events`, `admin_users`, `admin_login_tokens`, `admin_sessions`.
+- **Schema**: [`src/db/schema.ts`](./src/db/schema.ts) — `clinics`, `clinic_contact_messages`, `onboarding_submissions`, `provisioning_runs`, `audit_events`, `admin_users`, `admin_login_tokens`, `admin_sessions`, `clinic_owner_users`, `clinic_owner_login_tokens`, `clinic_owner_sessions`.
 - **Migrations**: checked into [`drizzle/`](./drizzle). Generate new ones with `npm run db:generate`; never edit existing migration files.
 - **Local Postgres**: [`docker-compose.yml`](./docker-compose.yml) runs Postgres 16 on `localhost:5432` with credentials matching `.env.example`.
 - **Production**: Railway Postgres. Set `DATABASE_URL` in Railway and Vercel; the same migrate command (`npm run db:migrate`) applies migrations on deploy.
@@ -94,6 +94,18 @@ npm run dev
 2. Enter your email — a link prints to the dev server console.
 3. Click the link → you land on `/admin`.
 4. Sign out from the admin header.
+
+## Clinic owner portal
+
+Each clinic gets an owner-side dashboard at `/portal` (separate from `/admin`).
+
+- **Identity**: `clinic_owner_users.email` is unique. The first time someone requests a magic link with an email that matches `clinics.contact_email`, the owner row is created automatically and linked to that clinic — no admin invite needed for the seeded owner. After that, only emails in `clinic_owner_users` can sign in.
+- **Cookie**: `dc_owner_session` (separate from admin), HMAC-signed with the same `ADMIN_SESSION_SECRET`.
+- **Tables**: `clinic_owner_users`, `clinic_owner_login_tokens`, `clinic_owner_sessions`. Same 30-day session TTL, 15-minute token TTL as admin.
+- **Mailer**: subject is "Sign in to {Clinic Name}". Uses Resend if configured, otherwise console.
+- **Phase A pages**: dashboard, contact-message inbox, site editor (name, phone, address, hours, social). Site edits trigger `revalidatePath` for the public site.
+
+After running `npm run db:seed`, the seeded clinic at `smile-bright-rogers` has an owner `hello@smilebright.example` — request a magic link from `/portal/login` with that address and the link prints to the dev console.
 
 ## Environment
 
