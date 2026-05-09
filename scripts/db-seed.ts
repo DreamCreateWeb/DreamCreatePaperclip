@@ -38,14 +38,48 @@ async function main() {
         accentColor: "#1B1B1F",
       },
       services: [
-        { name: "General Dentistry" },
-        { name: "Cosmetic Dentistry" },
-        { name: "Pediatric Care" },
+        {
+          name: "General Dentistry",
+          description:
+            "Routine cleanings, exams, fillings, and preventive care for the whole family.",
+        },
+        {
+          name: "Cosmetic Dentistry",
+          description:
+            "Whitening, veneers, and bonding to restore a confident smile.",
+        },
+        {
+          name: "Pediatric Care",
+          description:
+            "Gentle, age-appropriate dentistry that helps kids build healthy habits early.",
+        },
       ],
       team: [
-        { name: "Dr. Jane Doe", role: "Lead Dentist" },
-        { name: "Dr. John Smith", role: "Associate Dentist" },
+        {
+          name: "Dr. Jane Doe",
+          role: "Lead Dentist",
+          bio: "DDS, University of Arkansas. Twelve years building Rogers smiles.",
+        },
+        {
+          name: "Dr. John Smith",
+          role: "Associate Dentist",
+          bio: "DDS, focused on cosmetic and restorative dentistry.",
+        },
       ],
+      hours: [
+        { day: "mon", closed: false, open: "08:00", close: "17:00" },
+        { day: "tue", closed: false, open: "08:00", close: "17:00" },
+        { day: "wed", closed: false, open: "08:00", close: "17:00" },
+        { day: "thu", closed: false, open: "08:00", close: "17:00" },
+        { day: "fri", closed: false, open: "08:00", close: "14:00" },
+        { day: "sat", closed: true },
+        { day: "sun", closed: true },
+      ],
+      social: {
+        website: "https://smilebright.example",
+        facebook: "https://www.facebook.com/smilebright",
+        google: "https://maps.google.com/?cid=smilebright",
+      },
       status: "draft",
     })
     .onConflictDoNothing({ target: clinics.slug })

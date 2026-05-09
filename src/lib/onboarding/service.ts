@@ -7,7 +7,9 @@ import {
   onboardingSubmissions,
   type ClinicAddress,
   type ClinicBrand,
+  type ClinicHours,
   type ClinicService,
+  type ClinicSocial,
   type ClinicTeamMember,
 } from "@/src/db/schema";
 
@@ -92,6 +94,22 @@ export async function createOnboardingSubmission(
     photoUrl: t.photoUrl,
   }));
 
+  const hours: ClinicHours | undefined = payload.hours?.map((h) => ({
+    day: h.day,
+    closed: h.closed,
+    open: h.open,
+    close: h.close,
+  }));
+
+  const social: ClinicSocial | undefined = payload.social
+    ? {
+        website: payload.social.website,
+        facebook: payload.social.facebook,
+        instagram: payload.social.instagram,
+        google: payload.social.google,
+      }
+    : undefined;
+
   return await db.transaction(async (tx) => {
     const [clinic] = await tx
       .insert(clinics)
@@ -104,6 +122,8 @@ export async function createOnboardingSubmission(
         brand,
         services,
         team,
+        hours,
+        social,
         status: "draft",
       })
       .returning({ id: clinics.id });

@@ -59,6 +59,32 @@ export type ClinicTeamMember = {
   photoUrl?: string;
 };
 
+export const DAYS_OF_WEEK = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+] as const;
+export type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
+
+export type ClinicHoursDay = {
+  day: DayOfWeek;
+  closed: boolean;
+  open?: string;
+  close?: string;
+};
+export type ClinicHours = ClinicHoursDay[];
+
+export type ClinicSocial = {
+  website?: string;
+  facebook?: string;
+  instagram?: string;
+  google?: string;
+};
+
 export const clinics = pgTable(
   "clinics",
   {
@@ -71,6 +97,8 @@ export const clinics = pgTable(
     brand: jsonb("brand").$type<ClinicBrand>(),
     services: jsonb("services").$type<ClinicService[]>().notNull().default([]),
     team: jsonb("team").$type<ClinicTeamMember[]>().notNull().default([]),
+    hours: jsonb("hours").$type<ClinicHours>(),
+    social: jsonb("social").$type<ClinicSocial>(),
     status: clinicStatus("status").notNull().default("draft"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
@@ -88,6 +116,29 @@ export const clinics = pgTable(
   (t) => [
     uniqueIndex("clinics_slug_unique").on(t.slug),
     index("clinics_status_idx").on(t.status),
+  ],
+);
+
+export const clinicContactMessages = pgTable(
+  "clinic_contact_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    message: text("message").notNull(),
+    submittedIp: text("submitted_ip"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("clinic_contact_messages_clinic_idx").on(t.clinicId),
+    index("clinic_contact_messages_created_idx").on(t.createdAt),
   ],
 );
 
@@ -217,3 +268,5 @@ export type AdminLoginToken = typeof adminLoginTokens.$inferSelect;
 export type NewAdminLoginToken = typeof adminLoginTokens.$inferInsert;
 export type AdminSession = typeof adminSessions.$inferSelect;
 export type NewAdminSession = typeof adminSessions.$inferInsert;
+export type ClinicContactMessage = typeof clinicContactMessages.$inferSelect;
+export type NewClinicContactMessage = typeof clinicContactMessages.$inferInsert;

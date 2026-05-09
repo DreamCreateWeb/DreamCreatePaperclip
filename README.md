@@ -27,6 +27,11 @@ A board user collects a clinic intake → the clinic pays $200 via Stripe Checko
 | `/api/admin/auth/request`     | POST — issues a magic link if email allowed   |
 | `/api/admin/auth/callback`    | GET — consumes a magic link, sets session     |
 | `/api/admin/auth/logout`      | POST/GET — revokes session, clears cookie     |
+| `/sites/[slug]`               | Patient-facing clinic homepage (DRE-23)       |
+| `/sites/[slug]/services`      | Clinic services page (DRE-23)                 |
+| `/sites/[slug]/team`          | Clinic team/about page (DRE-23)               |
+| `/sites/[slug]/contact`       | Clinic contact page (form + map + hours)      |
+| `/api/clinic/[slug]/contact`  | POST — public contact form intake             |
 
 ## Local development
 
