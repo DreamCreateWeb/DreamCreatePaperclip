@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   jsonb,
   pgEnum,
@@ -47,6 +48,36 @@ export const reviewStatus = pgEnum("review_status", [
   "published",
   "hidden",
 ]);
+
+export const intakeSubmissionStatus = pgEnum("intake_submission_status", [
+  "pending",
+  "reviewed",
+  "archived",
+]);
+
+export type IntakeFieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "date"
+  | "textarea"
+  | "checkbox"
+  | "checklist";
+
+export type IntakeField = {
+  key: string;
+  label: string;
+  type: IntakeFieldType;
+  required?: boolean;
+  options?: string[];
+  placeholder?: string;
+};
+
+export type IntakeSection = {
+  key: string;
+  title: string;
+  fields: IntakeField[];
+};
 
 export type ClinicAddress = {
   line1: string;
@@ -458,3 +489,74 @@ export const reviews = pgTable(
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
 export type ReviewStatus = (typeof reviewStatus.enumValues)[number];
+
+export const intakeFormTemplates = pgTable(
+  "intake_form_templates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    sections: jsonb("sections").$type<IntakeSection[]>().notNull().default([]),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("intake_form_templates_clinic_idx").on(t.clinicId),
+    index("intake_form_templates_clinic_active_idx").on(t.clinicId, t.isActive),
+  ],
+);
+
+export const intakeSubmissions = pgTable(
+  "intake_submissions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    appointmentId: uuid("appointment_id").references(() => appointments.id, {
+      onDelete: "set null",
+    }),
+    templateId: uuid("template_id")
+      .notNull()
+      .references(() => intakeFormTemplates.id, { onDelete: "restrict" }),
+    patientName: text("patient_name").notNull(),
+    patientEmail: text("patient_email").notNull(),
+    patientDob: text("patient_dob"),
+    // HIPAA: responses JSONB contains PHI — ensure DB encryption at rest before production use
+    // Do NOT store SSN or full insurance policy numbers in this field
+    responses: jsonb("responses")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    status: intakeSubmissionStatus("status").notNull().default("pending"),
+    reviewedByOwnerId: uuid("reviewed_by_owner_id").references(
+      () => clinicOwnerUsers.id,
+      { onDelete: "set null" },
+    ),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    submittedIp: text("submitted_ip"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("intake_submissions_clinic_idx").on(t.clinicId),
+    index("intake_submissions_clinic_status_idx").on(t.clinicId, t.status),
+    index("intake_submissions_template_idx").on(t.templateId),
+    index("intake_submissions_appointment_idx").on(t.appointmentId),
+  ],
+);
+
+export type IntakeFormTemplate = typeof intakeFormTemplates.$inferSelect;
+export type NewIntakeFormTemplate = typeof intakeFormTemplates.$inferInsert;
+export type IntakeSubmission = typeof intakeSubmissions.$inferSelect;
+export type NewIntakeSubmission = typeof intakeSubmissions.$inferInsert;
+export type IntakeSubmissionStatus =
+  (typeof intakeSubmissionStatus.enumValues)[number];

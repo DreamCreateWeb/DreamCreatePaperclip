@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-import { clinicOwnerUsers, clinics } from "../src/db/schema";
+import { clinicOwnerUsers, clinics, intakeFormTemplates } from "../src/db/schema";
+import { DEFAULT_INTAKE_SECTIONS } from "../src/lib/intake/default-template";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -114,6 +115,29 @@ async function main() {
       );
     } else {
       console.log("Clinic owner already seeded; skipped.");
+    }
+  }
+
+  const [seededClinicForIntake] = await db
+    .select({ id: clinics.id })
+    .from(clinics)
+    .where(eq(clinics.slug, "smile-bright-rogers"))
+    .limit(1);
+  if (seededClinicForIntake) {
+    const [template] = await db
+      .insert(intakeFormTemplates)
+      .values({
+        clinicId: seededClinicForIntake.id,
+        name: "Patient Intake Form",
+        sections: DEFAULT_INTAKE_SECTIONS,
+        isActive: true,
+      })
+      .onConflictDoNothing()
+      .returning({ id: intakeFormTemplates.id });
+    if (template) {
+      console.log(`Inserted default intake template ${template.id}.`);
+    } else {
+      console.log("Intake template already seeded; skipped.");
     }
   }
 
