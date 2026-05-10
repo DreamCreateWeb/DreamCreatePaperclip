@@ -18,6 +18,7 @@ export const clinicStatus = pgEnum("clinic_status", [
   "provisioning",
   "live",
   "paused",
+  "past_due",
   "cancelled",
 ]);
 

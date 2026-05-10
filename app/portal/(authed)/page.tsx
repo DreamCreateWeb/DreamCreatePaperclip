@@ -4,6 +4,7 @@ import Link from "next/link";
 import { countUpcomingBookings } from "@/src/lib/booking/booking-service";
 import { countContactMessages } from "@/src/lib/clinic/contact-messages";
 import { getCurrentClinicOwner } from "@/src/lib/owner-auth/current-user";
+import { BillingPortalLink } from "./billing-portal-link";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ const STATUS_COPY: Record<string, { label: string; tone: string }> = {
   provisioning: { label: "Provisioning", tone: "bg-sky-100 text-sky-900" },
   live: { label: "Live", tone: "bg-emerald-100 text-emerald-900" },
   paused: { label: "Paused", tone: "bg-stone-200 text-stone-800" },
+  past_due: { label: "Past due", tone: "bg-red-100 text-red-900" },
   cancelled: { label: "Cancelled", tone: "bg-stone-200 text-stone-800" },
 };
 
@@ -32,6 +34,7 @@ export default async function OwnerDashboardPage() {
     countContactMessages(clinic.id),
     countUpcomingBookings(clinic.id),
   ]);
+  const hasStripe = Boolean(clinic.stripeCustomerId);
   const liveUrl =
     clinic.customDomain ??
     clinic.vercelDeploymentUrl ??
@@ -132,6 +135,7 @@ export default async function OwnerDashboardPage() {
             title="Account settings"
             description="Contact email and session controls."
           />
+          {hasStripe && <BillingPortalLink />}
         </div>
       </section>
     </div>
