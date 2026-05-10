@@ -4,6 +4,7 @@ import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
 import { listClinicOwners } from "@/src/lib/owner-portal/admin-invite-service";
 
 import { OwnerInviteRow } from "./owner-invite-row";
+import { ProvisionButton } from "./provision-button";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,10 @@ export default async function AdminClinicsPage() {
                   ) : null}
                 </div>
               </div>
+              {(clinic.status === "draft" ||
+                clinic.status === "pending_payment") && (
+                <ProvisionButton clinicId={clinic.id} />
+              )}
               <OwnerInviteRow
                 clinicId={clinic.id}
                 currentOwnerEmail={owner?.email ?? null}
