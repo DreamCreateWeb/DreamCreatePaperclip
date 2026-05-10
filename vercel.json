@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-briefing",
+      "schedule": "3 13 * * 1-5"
+    },
+    {
+      "path": "/api/cron/friday-recap",
+      "schedule": "3 21 * * 5"
+    }
+  ]
+}
