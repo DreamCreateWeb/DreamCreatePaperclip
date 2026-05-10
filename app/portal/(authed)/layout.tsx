@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 const NAV_ITEMS = [
   { href: "/portal", label: "Dashboard" },
+  { href: "/portal/bookings", label: "Bookings" },
   { href: "/portal/messages", label: "Messages" },
   { href: "/portal/site", label: "Site content" },
   { href: "/portal/settings", label: "Settings" },

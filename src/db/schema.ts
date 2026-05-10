@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   jsonb,
@@ -30,6 +31,14 @@ export const provisioningStatus = pgEnum("provisioning_status", [
   "running",
   "succeeded",
   "failed",
+]);
+
+export const appointmentStatus = pgEnum("appointment_status", [
+  "pending",
+  "confirmed",
+  "cancelled",
+  "completed",
+  "no_show",
 ]);
 
 export type ClinicAddress = {
@@ -85,6 +94,24 @@ export type ClinicSocial = {
   google?: string;
 };
 
+export type ClinicBookingConfig = {
+  enabled: boolean;
+  slotMinutes: number;
+  bufferMinutes: number;
+  leadTimeHours: number;
+  maxDaysAhead: number;
+  timezone: string;
+};
+
+export const DEFAULT_BOOKING_CONFIG: ClinicBookingConfig = {
+  enabled: true,
+  slotMinutes: 30,
+  bufferMinutes: 0,
+  leadTimeHours: 24,
+  maxDaysAhead: 60,
+  timezone: "America/Chicago",
+};
+
 export const clinics = pgTable(
   "clinics",
   {
@@ -99,6 +126,7 @@ export const clinics = pgTable(
     team: jsonb("team").$type<ClinicTeamMember[]>().notNull().default([]),
     hours: jsonb("hours").$type<ClinicHours>(),
     social: jsonb("social").$type<ClinicSocial>(),
+    bookingConfig: jsonb("booking_config").$type<ClinicBookingConfig>(),
     status: clinicStatus("status").notNull().default("draft"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
@@ -314,6 +342,45 @@ export const clinicOwnerSessions = pgTable(
   ],
 );
 
+export const appointments = pgTable(
+  "appointments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    serviceName: text("service_name").notNull(),
+    patientName: text("patient_name").notNull(),
+    patientEmail: text("patient_email").notNull(),
+    patientPhone: text("patient_phone"),
+    notes: text("notes"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    status: appointmentStatus("status").notNull().default("pending"),
+    confirmationToken: text("confirmation_token").notNull(),
+    submittedIp: text("submitted_ip"),
+    userAgent: text("user_agent"),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("appointments_clinic_idx").on(t.clinicId),
+    index("appointments_clinic_starts_idx").on(t.clinicId, t.startsAt),
+    index("appointments_status_idx").on(t.status),
+    uniqueIndex("appointments_confirmation_token_unique").on(t.confirmationToken),
+    uniqueIndex("appointments_no_double_booking_idx")
+      .on(t.clinicId, t.startsAt)
+      .where(sql`status <> 'cancelled'`),
+  ],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type NewClinic = typeof clinics.$inferInsert;
 export type OnboardingSubmission = typeof onboardingSubmissions.$inferSelect;
@@ -338,3 +405,6 @@ export type NewClinicOwnerLoginToken =
   typeof clinicOwnerLoginTokens.$inferInsert;
 export type ClinicOwnerSession = typeof clinicOwnerSessions.$inferSelect;
 export type NewClinicOwnerSession = typeof clinicOwnerSessions.$inferInsert;
+export type Appointment = typeof appointments.$inferSelect;
+export type NewAppointment = typeof appointments.$inferInsert;
+export type AppointmentStatus = (typeof appointmentStatus.enumValues)[number];

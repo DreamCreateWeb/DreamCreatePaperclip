@@ -37,7 +37,7 @@ export function ClinicHero({ clinic, basePath }: Props) {
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Link
-              href={`${basePath}/contact` as unknown as Route}
+              href={`${basePath}/book` as unknown as Route}
               className="inline-flex h-11 items-center rounded-pill px-6 text-sm font-medium shadow-sm transition-opacity hover:opacity-90"
               style={{
                 background: "var(--clinic-primary)",

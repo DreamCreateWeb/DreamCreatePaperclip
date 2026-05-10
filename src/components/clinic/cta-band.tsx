@@ -33,7 +33,7 @@ export function CtaBand({ clinic, basePath }: Props) {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
-            href={`${basePath}/contact` as unknown as Route}
+            href={`${basePath}/book` as unknown as Route}
             className="inline-flex h-11 items-center rounded-pill bg-white px-6 text-sm font-medium text-ink shadow-sm transition-opacity hover:opacity-90"
           >
             Request an appointment

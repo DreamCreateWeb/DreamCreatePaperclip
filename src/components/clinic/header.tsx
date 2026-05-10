@@ -81,7 +81,7 @@ export function ClinicHeader({ clinic, basePath, current = "home" }: Props) {
             </a>
           ) : null}
           <Link
-            href={`${basePath}/contact` as unknown as Route}
+            href={`${basePath}/book` as unknown as Route}
             className="inline-flex h-9 items-center rounded-pill px-4 text-sm font-medium shadow-sm transition-opacity hover:opacity-90"
             style={{
               background: "var(--clinic-primary)",

@@ -1,6 +1,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 
+import { countUpcomingBookings } from "@/src/lib/booking/booking-service";
 import { countContactMessages } from "@/src/lib/clinic/contact-messages";
 import { getCurrentClinicOwner } from "@/src/lib/owner-auth/current-user";
 
@@ -27,7 +28,10 @@ export default async function OwnerDashboardPage() {
     label: clinic.status,
     tone: "bg-stone-200 text-stone-800",
   };
-  const messageCount = await countContactMessages(clinic.id);
+  const [messageCount, upcomingBookings] = await Promise.all([
+    countContactMessages(clinic.id),
+    countUpcomingBookings(clinic.id),
+  ]);
   const liveUrl =
     clinic.customDomain ??
     clinic.vercelDeploymentUrl ??
@@ -72,8 +76,9 @@ export default async function OwnerDashboardPage() {
         />
         <DashboardStat
           label="Upcoming bookings"
-          value="—"
-          hint="Available once booking is wired up."
+          value={String(upcomingBookings)}
+          href="/portal/bookings"
+          cta="View bookings"
         />
         <DashboardStat
           label="New reviews"
@@ -111,6 +116,11 @@ export default async function OwnerDashboardPage() {
             href="/portal/site/brand"
             title="Brand"
             description="Colors and logo with live preview."
+          />
+          <DashboardLink
+            href="/portal/bookings"
+            title="Bookings"
+            description="Confirm, reschedule, or cancel patient appointments."
           />
           <DashboardLink
             href="/portal/messages"
