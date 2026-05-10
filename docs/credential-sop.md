@@ -155,4 +155,4 @@ All reads and writes are recorded in:
 
 | Date | Service | Outcome | Notes |
 |------|---------|---------|-------|
-| 2026-05-10 | *(pending — see DRE-49 acceptance criteria)* | — | First dry-run to be executed on a low-stakes free-trial SaaS |
+| 2026-05-10 | `test-saas-dry-run` (throwaway) | Partial ✅/⚠️ | Lookup-miss ✅, vault write ✅, Slack DM ✅, email draft ✅. Browser portal reset ⚠️ BLOCKED — missing system browser libs (same env constraint as DRE-59). Label create blocked (Gmail scope). Full end-to-end pending DRE-59 resolution. |
