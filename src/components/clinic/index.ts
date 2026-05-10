@@ -8,3 +8,5 @@ export { MapEmbed } from "./map-embed";
 export { ServicesGrid } from "./services-grid";
 export { TeamGrid } from "./team-grid";
 export { ContactForm } from "./contact-form";
+export { ReviewForm } from "./review-form";
+export { ReviewsSection } from "./reviews-section";

@@ -58,3 +58,22 @@ export function localBusinessJsonLd(
     sameAs: sameAs.length > 0 ? sameAs : undefined,
   };
 }
+
+export function aggregateRatingJsonLd(
+  siteUrl: string,
+  ratingValue: number,
+  reviewCount: number,
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Dentist",
+    url: siteUrl,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: ratingValue.toFixed(1),
+      reviewCount: String(reviewCount),
+      bestRating: "5",
+      worstRating: "1",
+    },
+  };
+}

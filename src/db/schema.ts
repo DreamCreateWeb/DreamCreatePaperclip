@@ -4,6 +4,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -39,6 +40,12 @@ export const appointmentStatus = pgEnum("appointment_status", [
   "cancelled",
   "completed",
   "no_show",
+]);
+
+export const reviewStatus = pgEnum("review_status", [
+  "pending",
+  "published",
+  "hidden",
 ]);
 
 export type ClinicAddress = {
@@ -112,6 +119,16 @@ export const DEFAULT_BOOKING_CONFIG: ClinicBookingConfig = {
   timezone: "America/Chicago",
 };
 
+export type ClinicReviewConfig = {
+  enabled: boolean;
+  autoPublish: boolean;
+};
+
+export const DEFAULT_REVIEW_CONFIG: ClinicReviewConfig = {
+  enabled: true,
+  autoPublish: false,
+};
+
 export const clinics = pgTable(
   "clinics",
   {
@@ -127,6 +144,7 @@ export const clinics = pgTable(
     hours: jsonb("hours").$type<ClinicHours>(),
     social: jsonb("social").$type<ClinicSocial>(),
     bookingConfig: jsonb("booking_config").$type<ClinicBookingConfig>(),
+    reviewConfig: jsonb("review_config").$type<ClinicReviewConfig>(),
     status: clinicStatus("status").notNull().default("draft"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
@@ -408,3 +426,35 @@ export type NewClinicOwnerSession = typeof clinicOwnerSessions.$inferInsert;
 export type Appointment = typeof appointments.$inferSelect;
 export type NewAppointment = typeof appointments.$inferInsert;
 export type AppointmentStatus = (typeof appointmentStatus.enumValues)[number];
+
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    patientName: text("patient_name").notNull(),
+    rating: smallint("rating").notNull(),
+    body: text("body").notNull(),
+    serviceTag: text("service_tag"),
+    status: reviewStatus("status").notNull().default("pending"),
+    clinicResponse: text("clinic_response"),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    submittedIp: text("submitted_ip"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("reviews_clinic_idx").on(t.clinicId),
+    index("reviews_clinic_status_idx").on(t.clinicId, t.status),
+  ],
+);
+
+export type Review = typeof reviews.$inferSelect;
+export type NewReview = typeof reviews.$inferInsert;
+export type ReviewStatus = (typeof reviewStatus.enumValues)[number];

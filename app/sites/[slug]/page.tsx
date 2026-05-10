@@ -5,14 +5,19 @@ import { ClinicHeader } from "@/src/components/clinic/header";
 import { ClinicHero } from "@/src/components/clinic/hero";
 import { CtaBand } from "@/src/components/clinic/cta-band";
 import { HoursLocationCard } from "@/src/components/clinic/hours-card";
+import { ReviewsSection } from "@/src/components/clinic/reviews-section";
 import { ServicesGrid } from "@/src/components/clinic/services-grid";
 import { TeamGrid } from "@/src/components/clinic/team-grid";
 import { getClinicBySlug } from "@/src/lib/clinic/get-clinic";
-import { localBusinessJsonLd } from "@/src/lib/clinic/jsonld";
+import { aggregateRatingJsonLd, localBusinessJsonLd } from "@/src/lib/clinic/jsonld";
 import {
   buildClinicMetadata,
   clinicCanonical,
 } from "@/src/lib/clinic/page-metadata";
+import {
+  getReviewStats,
+  listPublishedReviews,
+} from "@/src/lib/reviews/review-service";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +50,18 @@ export default async function ClinicHomePage({
   if (!clinic) notFound();
 
   const basePath = `/sites/${clinic.slug}`;
-  const jsonLd = localBusinessJsonLd(clinic, clinicCanonical(clinic.slug));
+  const siteUrl = clinicCanonical(clinic.slug);
+
+  const [published, stats] = await Promise.all([
+    listPublishedReviews(clinic.id),
+    getReviewStats(clinic.id),
+  ]);
+
+  const jsonLd = localBusinessJsonLd(clinic, siteUrl);
+  const ratingLd =
+    stats.reviewCount > 0
+      ? aggregateRatingJsonLd(siteUrl, stats.avgRating, stats.reviewCount)
+      : null;
 
   return (
     <>
@@ -62,6 +78,12 @@ export default async function ClinicHomePage({
           heading="The team you'll meet"
           intro="Friendly, credentialed, and genuinely glad to see you."
         />
+        <ReviewsSection
+          reviews={published}
+          avgRating={stats.avgRating}
+          reviewCount={stats.reviewCount}
+          basePath={basePath}
+        />
         <HoursLocationCard clinic={clinic} basePath={basePath} />
         <CtaBand clinic={clinic} basePath={basePath} />
       </main>
@@ -70,6 +92,13 @@ export default async function ClinicHomePage({
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {ratingLd ? (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ratingLd) }}
+        />
+      ) : null}
     </>
   );
 }
