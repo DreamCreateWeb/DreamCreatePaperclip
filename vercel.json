@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/friday-recap",
       "schedule": "3 21 * * 5"
+    },
+    {
+      "path": "/api/slack/poll",
+      "schedule": "* * * * *"
     }
   ]
 }
