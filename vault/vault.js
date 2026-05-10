@@ -70,6 +70,39 @@ function canWrite() {
   return agentId === AM_AGENT_ID || agentId === CEO_AGENT_ID;
 }
 
+function base32Decode(str) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const clean = str.toUpperCase().replace(/=+$/, '');
+  let bits = 0;
+  let value = 0;
+  const output = [];
+  for (const char of clean) {
+    const idx = alphabet.indexOf(char);
+    if (idx === -1) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(output);
+}
+
+function computeTotp(base32Secret, timeStep = 30, digits = 6) {
+  const secretBuf = base32Decode(base32Secret);
+  const counter = Math.floor(Date.now() / 1000 / timeStep);
+  const counterBuf = Buffer.alloc(8);
+  counterBuf.writeBigUInt64BE(BigInt(counter));
+  const hmac = crypto.createHmac('sha1', secretBuf).update(counterBuf).digest();
+  const offset = hmac[hmac.length - 1] & 0x0f;
+  const code = ((hmac[offset] & 0x7f) << 24) |
+               (hmac[offset + 1] << 16) |
+               (hmac[offset + 2] << 8) |
+               hmac[offset + 3];
+  return String(code % (10 ** digits)).padStart(digits, '0');
+}
+
 const [, , cmd, ...args] = process.argv;
 
 switch (cmd) {
@@ -148,8 +181,30 @@ switch (cmd) {
     break;
   }
 
+  case 'totp': {
+    const serviceName = args[0];
+    if (!serviceName) {
+      console.error('Usage: vault.js totp <service_name>');
+      process.exit(1);
+    }
+    const key = getKey();
+    const entries = loadVault(key);
+    const entry = entries.find(e => e.service_name === serviceName);
+    appendAudit({ ts: new Date().toISOString(), agentId: getAgentId(), service: serviceName, action: 'totp_read' });
+    if (!entry) {
+      console.error(`Not found: ${serviceName}`);
+      process.exit(1);
+    }
+    if (!entry.mfa_totp_secret) {
+      console.error(`No TOTP secret stored for: ${serviceName}`);
+      process.exit(1);
+    }
+    console.log(computeTotp(entry.mfa_totp_secret));
+    break;
+  }
+
   default: {
-    console.error('Usage: vault.js <read|write|list|audit> [args]');
+    console.error('Usage: vault.js <read|write|list|audit|totp> [args]');
     process.exit(1);
   }
 }
