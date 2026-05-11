@@ -177,8 +177,17 @@ export default async function OwnerIntakePage({
   );
 }
 
-function ResponseSummary({ responses }: { responses: Record<string, unknown> }) {
-  const entries = Object.entries(responses).filter(([, v]) => {
+function ResponseSummary({ responses }: { responses: string }) {
+  let parsed: Record<string, unknown> = {};
+  try {
+    const val = JSON.parse(responses);
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      parsed = val as Record<string, unknown>;
+    }
+  } catch {
+    // non-parseable responses renders nothing
+  }
+  const entries = Object.entries(parsed).filter(([, v]) => {
     if (Array.isArray(v)) return v.length > 0;
     if (typeof v === "boolean") return v;
     return v !== "" && v !== null && v !== undefined;

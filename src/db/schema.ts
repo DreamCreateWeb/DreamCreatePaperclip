@@ -551,12 +551,7 @@ export const intakeSubmissions = pgTable(
     patientName: text("patient_name").notNull(),
     patientEmail: text("patient_email").notNull(),
     patientDob: text("patient_dob"),
-    // HIPAA: responses JSONB contains PHI — ensure DB encryption at rest before production use
-    // Do NOT store SSN or full insurance policy numbers in this field
-    responses: jsonb("responses")
-      .$type<Record<string, unknown>>()
-      .notNull()
-      .default({}),
+    responses: text("responses").notNull(),
     status: intakeSubmissionStatus("status").notNull().default("pending"),
     reviewedByOwnerId: uuid("reviewed_by_owner_id").references(
       () => clinicOwnerUsers.id,

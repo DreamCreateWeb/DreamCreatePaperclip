@@ -10,10 +10,21 @@ import {
   type IntakeSubmission,
   type IntakeSubmissionStatus,
 } from "@/src/db/schema";
+import { decryptPhi, encryptPhi } from "@/src/lib/phi-crypto";
 
 import { DEFAULT_INTAKE_SECTIONS } from "./default-template";
 import { notifyOwnerNewIntakeSubmission } from "./notify";
 import type { IntakeSubmitPayload } from "./intake-schema";
+
+function decryptSubmissionRow(row: IntakeSubmission): IntakeSubmission {
+  return {
+    ...row,
+    patientName: decryptPhi(row.patientName),
+    patientEmail: decryptPhi(row.patientEmail),
+    patientDob: row.patientDob ? decryptPhi(row.patientDob) : null,
+    responses: decryptPhi(row.responses),
+  };
+}
 
 export async function getActiveTemplateForClinic(
   clinicId: string,
@@ -63,10 +74,10 @@ export async function createIntakeSubmission(
       clinicId,
       templateId,
       appointmentId: payload.appointmentId ?? null,
-      patientName: payload.patientName,
-      patientEmail: payload.patientEmail.toLowerCase(),
-      patientDob: payload.patientDob ?? null,
-      responses: payload.responses,
+      patientName: encryptPhi(payload.patientName),
+      patientEmail: encryptPhi(payload.patientEmail.toLowerCase()),
+      patientDob: payload.patientDob ? encryptPhi(payload.patientDob) : null,
+      responses: encryptPhi(JSON.stringify(payload.responses)),
       status: "pending",
       submittedIp: meta.ip,
     })
@@ -80,6 +91,8 @@ export async function createIntakeSubmission(
     payload: { clinicId, templateId },
   });
 
+  const decrypted = decryptSubmissionRow(row);
+
   const [clinic] = await db
     .select()
     .from(clinics)
@@ -87,12 +100,12 @@ export async function createIntakeSubmission(
     .limit(1);
 
   if (clinic) {
-    await notifyOwnerNewIntakeSubmission(clinic, row).catch((err) => {
+    await notifyOwnerNewIntakeSubmission(clinic, decrypted).catch((err) => {
       console.error("Failed to send intake notification:", err);
     });
   }
 
-  return row;
+  return decrypted;
 }
 
 export async function listIntakeSubmissionsForClinic(
@@ -104,12 +117,13 @@ export async function listIntakeSubmissionsForClinic(
   if (options.statuses && options.statuses.length > 0) {
     conds.push(inArray(intakeSubmissions.status, options.statuses));
   }
-  return db
+  const rows = await db
     .select()
     .from(intakeSubmissions)
     .where(and(...conds))
     .orderBy(desc(intakeSubmissions.createdAt))
     .limit(options.limit ?? 200);
+  return rows.map(decryptSubmissionRow);
 }
 
 export async function getIntakeSubmissionById(
@@ -121,7 +135,7 @@ export async function getIntakeSubmissionById(
     .from(intakeSubmissions)
     .where(eq(intakeSubmissions.id, id))
     .limit(1);
-  return rows[0] ?? null;
+  return rows[0] ? decryptSubmissionRow(rows[0]) : null;
 }
 
 export async function updateIntakeSubmissionStatus(

@@ -1354,7 +1354,7 @@ function LogoCropper({
     setDragStart({ x: e.clientX - rect.left - cropX, y: e.clientY - rect.top - cropY });
   }
 
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+  function _handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!isDragging || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const newX = e.clientX - rect.left - dragStart.x;
@@ -1364,7 +1364,7 @@ function LogoCropper({
     setCropY(Math.max(0, Math.min(newY, imgSize.height - cropHeight)));
   }
 
-  function handleMouseUp() {
+  function _handleMouseUp() {
     setIsDragging(false);
   }
 
