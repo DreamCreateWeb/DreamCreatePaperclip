@@ -33,7 +33,9 @@ export function MapEmbed({ address, clinicName }: Props) {
           className="font-medium hover:underline"
           style={{ color: "var(--clinic-primary)" }}
         >
-          Directions →
+          Directions
+          <span className="sr-only"> (opens in new tab)</span>
+          {" →"}
         </a>
       </div>
     </div>

@@ -14,12 +14,15 @@ export function InsuranceCarousel({ providers, heading }: Props) {
   if (providers.length === 0) return null;
 
   return (
-    <section className="border-y border-rule bg-surface py-14">
+    <section
+      className="border-y border-rule bg-surface py-14"
+      aria-label={heading ?? "Insurance providers"}
+    >
       <div className="mx-auto max-w-6xl px-6">
         {heading ? (
-          <p className="mb-8 text-center text-xs font-medium uppercase tracking-[0.22em] text-ink-muted">
+          <h2 className="mb-8 text-center text-xs font-medium uppercase tracking-[0.22em] text-ink-muted">
             {heading}
-          </p>
+          </h2>
         ) : null}
 
         {/* Scrollable row */}

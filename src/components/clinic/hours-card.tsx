@@ -17,7 +17,7 @@ export function HoursLocationCard({ clinic, basePath }: Props) {
   const phone = telHref(clinic.contactPhone);
   const hours = orderedHours(clinic.hours);
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
+    <section aria-label="Location and hours" className="mx-auto max-w-6xl px-6 py-20">
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-card border border-rule bg-white p-8">
           <p
@@ -26,9 +26,9 @@ export function HoursLocationCard({ clinic, basePath }: Props) {
           >
             Visit us
           </p>
-          <p className="mt-3 font-display text-3xl text-ink">
+          <h2 className="mt-3 font-display text-3xl text-ink">
             Easy to find. Easy to park.
-          </p>
+          </h2>
           <address className="mt-5 not-italic text-base leading-relaxed text-ink">
             {addressLines.map((line) => (
               <div key={line}>{line}</div>
@@ -73,7 +73,7 @@ export function HoursLocationCard({ clinic, basePath }: Props) {
           >
             Hours
           </p>
-          <p className="mt-3 font-display text-3xl text-ink">When we&rsquo;re open.</p>
+          <h2 className="mt-3 font-display text-3xl text-ink">When we&rsquo;re open.</h2>
           {hours.length > 0 ? (
             <ul className="mt-6 divide-y divide-rule/70">
               {hours.map((h) => (

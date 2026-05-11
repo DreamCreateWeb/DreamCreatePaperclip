@@ -115,6 +115,7 @@ export function ClinicFooter({ clinic, basePath }: Props) {
                     className="hover:text-ink"
                   >
                     {s.label}
+                    <span className="sr-only"> (opens in new tab)</span>
                   </a>
                 </li>
               ))}

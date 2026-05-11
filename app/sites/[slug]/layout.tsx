@@ -26,7 +26,8 @@ export default async function ClinicSiteLayout({
       >
         Skip to content
       </a>
-      <div id="clinic-main">{children}</div>
+      {/* tabIndex={-1} allows the skip link to programmatically focus this div */}
+      <div id="clinic-main" tabIndex={-1}>{children}</div>
       <ClinicFooter clinic={clinic} basePath={basePath} />
     </div>
   );

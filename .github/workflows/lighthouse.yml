@@ -1,0 +1,42 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Wait for the Vercel preview deployment to be ready, then capture the URL.
+      - name: Wait for Vercel preview
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
+        id: vercel_preview
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          max_timeout: 180
+          check_interval: 10
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.vercel_preview.outputs.url }}/sites/${{ vars.LHCI_CLINIC_SLUG || 'smile-bright-rogers' }}
+            ${{ steps.vercel_preview.outputs.url }}/sites/${{ vars.LHCI_CLINIC_SLUG || 'smile-bright-rogers' }}/services
+            ${{ steps.vercel_preview.outputs.url }}/sites/${{ vars.LHCI_CLINIC_SLUG || 'smile-bright-rogers' }}/contact
+          configPath: .lighthouserc.js
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

@@ -104,6 +104,8 @@ export function ContactForm({ slug }: Props) {
             required
             maxLength={120}
             className="input"
+            aria-describedby={errors.name?.length ? "name-error" : undefined}
+            aria-invalid={errors.name?.length ? true : undefined}
           />
         </Field>
         <Field id="email" label="Email" errors={errors.email}>
@@ -115,6 +117,8 @@ export function ContactForm({ slug }: Props) {
             required
             maxLength={200}
             className="input"
+            aria-describedby={errors.email?.length ? "email-error" : undefined}
+            aria-invalid={errors.email?.length ? true : undefined}
           />
         </Field>
         <Field id="phone" label="Phone (optional)" errors={errors.phone}>
@@ -125,6 +129,8 @@ export function ContactForm({ slug }: Props) {
             autoComplete="tel"
             maxLength={30}
             className="input"
+            aria-describedby={errors.phone?.length ? "phone-error" : undefined}
+            aria-invalid={errors.phone?.length ? true : undefined}
           />
         </Field>
         <div className="hidden">
@@ -151,6 +157,8 @@ export function ContactForm({ slug }: Props) {
             maxLength={2000}
             rows={5}
             className="input resize-y"
+            aria-describedby={errors.message?.length ? "message-error" : undefined}
+            aria-invalid={errors.message?.length ? true : undefined}
           />
         </Field>
       </div>
@@ -227,7 +235,7 @@ function Field({
       </label>
       <div className="mt-1.5">{children}</div>
       {errors && errors.length > 0 ? (
-        <p className="mt-1 text-xs text-red-700">{errors.join(" ")}</p>
+        <p id={`${id}-error`} className="mt-1 text-xs text-red-700">{errors.join(" ")}</p>
       ) : null}
     </div>
   );
