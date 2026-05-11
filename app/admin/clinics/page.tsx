@@ -14,6 +14,7 @@ const STATUS_LABEL: Record<string, string> = {
   provisioning: "Provisioning",
   live: "Live",
   paused: "Paused",
+  past_due: "Past due",
   cancelled: "Cancelled",
 };
 
@@ -65,9 +66,16 @@ export default async function AdminClinicsPage() {
             >
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
-                    {STATUS_LABEL[clinic.status] ?? clinic.status}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
+                      {STATUS_LABEL[clinic.status] ?? clinic.status}
+                    </p>
+                    {clinic.status === "past_due" && (
+                      <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        Past due
+                      </span>
+                    )}
+                  </div>
                   <h2 className="mt-1 font-display text-2xl text-ink">
                     {clinic.name}
                   </h2>
