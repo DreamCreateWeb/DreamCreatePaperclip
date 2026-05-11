@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { getDb, schema } from "@/src/db/client";
 import { registerUptimeMonitor, removeUptimeMonitor } from "@/src/lib/uptime";
+import { sendProvisioningFailure, sendProvisioningSuccess } from "@/src/lib/slack";
 
 import { cloneTemplateRepo, deleteRepo, getRepoId } from "./github";
 import {
@@ -57,9 +58,11 @@ export async function provisionClinic(clinicId: string): Promise<void> {
   let repoCloned = false;
   let vercelCreated = false;
   let uptimeMonitorId: string | null = null;
+  let lastStep: ProvisioningStep = "clone";
 
   try {
     if (!repoUrl) {
+      lastStep = "clone";
       await logStep(clinicId, "clone", async () => {
         const result = await cloneTemplateRepo(clinic.slug);
         repoUrl = result.repoUrl;
@@ -71,11 +74,13 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       repoCloned = true;
     }
 
+    lastStep = "config";
     await logStep(clinicId, "config", async () => {
       // reserved for future per-clinic customization
     });
 
     if (!vercelProjectId) {
+      lastStep = "vercel_create";
       await logStep(clinicId, "vercel_create", async () => {
         const owner =
           process.env.GITHUB_TEMPLATE_OWNER ?? "DreamCreateWeb";
@@ -90,6 +95,7 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       });
       vercelCreated = true;
 
+      lastStep = "deploy";
       await logStep(clinicId, "deploy", async () => {
         // vercelProjectId is guaranteed set by the preceding vercel_create step
         const pid = vercelProjectId!;
@@ -121,7 +127,13 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       .update(schema.clinics)
       .set({ status: "live" })
       .where(eq(schema.clinics.id, clinicId));
+
+    const deploymentUrl = clinic.vercelDeploymentUrl || `https://clinic-${clinic.slug}.dreamcreate.web`;
+    await sendProvisioningSuccess(clinic.name, clinic.slug, deploymentUrl);
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    await sendProvisioningFailure(clinic.name, lastStep, errorMessage);
+
     if (uptimeMonitorId) {
       await removeUptimeMonitor(uptimeMonitorId).catch((e) => {
         console.error("[provision] rollback uptime monitor failed", e);

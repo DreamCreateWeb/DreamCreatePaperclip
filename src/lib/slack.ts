@@ -23,6 +23,30 @@ export async function sendSlackDm(text: string, channel = CEO_DM_CHANNEL): Promi
   }
 }
 
+function getNotificationChannel(): string {
+  return process.env.SLACK_CHANNEL_ID || CEO_DM_CHANNEL;
+}
+
+export async function sendProvisioningSuccess(
+  clinicName: string,
+  slug: string,
+  deploymentUrl: string,
+): Promise<void> {
+  const channel = getNotificationChannel();
+  const text = `✅ Clinic provisioned successfully\n*${clinicName}* (${slug})\n<${deploymentUrl}|View deployment>`;
+  await sendSlackDm(text, channel);
+}
+
+export async function sendProvisioningFailure(
+  clinicName: string,
+  failedStep: string,
+  error: string,
+): Promise<void> {
+  const channel = getNotificationChannel();
+  const text = `❌ Clinic provisioning failed\n*${clinicName}*\nFailed step: \`${failedStep}\`\nError: ${error}`;
+  await sendSlackDm(text, channel);
+}
+
 /**
  * Verifies a Slack request signature using HMAC-SHA256.
  * Rejects requests older than 5 minutes.
