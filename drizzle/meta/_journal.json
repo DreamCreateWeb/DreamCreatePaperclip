@@ -43,6 +43,13 @@
       "when": 1778443518701,
       "tag": "0005_flat_killer_shrike",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778479201836,
+      "tag": "0006_foamy_cardiac",
+      "breakpoints": true
     }
   ]
 }

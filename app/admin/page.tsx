@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { isNull } from "drizzle-orm";
 
 import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
+import { getDb, schema } from "@/src/db/client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminHomePage() {
   const user = await getCurrentAdminUser();
   if (!user) redirect("/login");
+
+  const db = getDb();
+  const unreadLeads = await db
+    .select({ count: schema.leads.id })
+    .from(schema.leads)
+    .where(isNull(schema.leads.readAt))
+    .then((rows) => rows.length);
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-6 py-16">
@@ -39,6 +48,29 @@ export default async function AdminHomePage() {
           Manage
         </h2>
         <ul className="mt-4 space-y-3 text-sm text-ink">
+          <li>
+            <Link
+              href="/admin/leads"
+              className="group relative block rounded-card border border-rule bg-white px-5 py-4 transition hover:border-ink"
+            >
+              <div className="flex items-baseline justify-between">
+                <div className="flex-1">
+                  <span className="font-medium">Lead inbox</span>
+                  <span className="block text-ink-muted">
+                    Review contact form submissions.
+                  </span>
+                </div>
+                {unreadLeads > 0 && (
+                  <span className="ml-3 inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                    {unreadLeads}
+                  </span>
+                )}
+              </div>
+              <span className="mt-2 block text-xs font-medium uppercase tracking-[0.16em] text-accent group-hover:underline">
+                Open →
+              </span>
+            </Link>
+          </li>
           <li>
             <Link
               href="/admin/clinics"

@@ -560,9 +560,36 @@ export const intakeSubmissions = pgTable(
   ],
 );
 
+export const leads = pgTable(
+  "leads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clinicId: uuid("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    message: text("message").notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("leads_clinic_idx").on(t.clinicId),
+    index("leads_clinic_created_idx").on(t.clinicId, t.createdAt),
+    index("leads_clinic_unread_idx")
+      .on(t.clinicId)
+      .where(sql`read_at IS NULL`),
+  ],
+);
+
 export type IntakeFormTemplate = typeof intakeFormTemplates.$inferSelect;
 export type NewIntakeFormTemplate = typeof intakeFormTemplates.$inferInsert;
 export type IntakeSubmission = typeof intakeSubmissions.$inferSelect;
 export type NewIntakeSubmission = typeof intakeSubmissions.$inferInsert;
 export type IntakeSubmissionStatus =
   (typeof intakeSubmissionStatus.enumValues)[number];
+export type Lead = typeof leads.$inferSelect;
+export type NewLead = typeof leads.$inferInsert;
