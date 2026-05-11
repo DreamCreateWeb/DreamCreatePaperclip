@@ -30,7 +30,7 @@ function parseHex(hex: string): { r: number; g: number; b: number } {
   };
 }
 
-function relativeLuminance(hex: string): number {
+export function relativeLuminance(hex: string): number {
   const { r, g, b } = parseHex(hex);
   const channel = (c: number) => {
     const s = c / 255;
@@ -39,8 +39,8 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
-function readableForeground(hex: string): string {
-  return relativeLuminance(hex) > 0.55 ? "#0b0b0c" : "#ffffff";
+export function readableForeground(hex: string): string {
+  return relativeLuminance(hex) > 0.179 ? "#0b0b0c" : "#ffffff";
 }
 
 function softTint(hex: string, mix = 0.88): string {
