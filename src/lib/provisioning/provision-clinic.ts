@@ -12,6 +12,7 @@ import {
   deleteVercelProject,
   disableDeploymentProtection,
   triggerDeploy,
+  waitForDeployment,
 } from "./vercel";
 
 type ProvisioningStep = (typeof schema.provisioningStep.enumValues)[number];
@@ -102,7 +103,10 @@ export async function provisionClinic(clinicId: string): Promise<void> {
         // vercelProjectId is guaranteed set by the preceding vercel_create step
         const pid = vercelProjectId!;
         const repoId = await getRepoId(clinic.slug);
-        const { deploymentUrl } = await triggerDeploy(pid, repoId);
+        const { deploymentUrl, deploymentId } = await triggerDeploy(pid, repoId);
+        await waitForDeployment(deploymentId).catch((e) => {
+          console.warn("[provision] deployment wait timed out (non-fatal)", e);
+        });
         await db
           .update(schema.clinics)
           .set({ vercelDeploymentUrl: deploymentUrl })

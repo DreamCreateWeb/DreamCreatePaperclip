@@ -100,7 +100,7 @@ export async function addVercelEnvVars(
 export async function triggerDeploy(
   projectId: string,
   repoId: number,
-): Promise<{ deploymentUrl: string }> {
+): Promise<{ deploymentUrl: string; deploymentId: string }> {
   const res = await vercelFetch("/v13/deployments", {
     method: "POST",
     body: JSON.stringify({
@@ -118,8 +118,38 @@ export async function triggerDeploy(
     const err = await res.text();
     throw new Error(`Vercel triggerDeploy failed: ${res.status} ${err}`);
   }
-  const data = (await res.json()) as { url: string };
-  return { deploymentUrl: `https://${data.url}` };
+  const data = (await res.json()) as { id: string; url: string };
+  return { deploymentUrl: `https://${data.url}`, deploymentId: data.id };
+}
+
+export async function waitForDeployment(
+  deploymentId: string,
+  timeoutMs: number = 10 * 60 * 1000,
+): Promise<void> {
+  const pollIntervalMs = 10 * 1000;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeoutMs) {
+    const res = await vercelFetch(`/v13/deployments/${deploymentId}`, {
+      method: "GET",
+    });
+    if (!res.ok) {
+      console.warn(`[vercel] waitForDeployment fetch failed: ${res.status}`);
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+      continue;
+    }
+
+    const data = (await res.json()) as { state: string };
+    if (data.state === "READY") {
+      return;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+  }
+
+  console.warn(
+    `[vercel] waitForDeployment timed out after ${Math.round((Date.now() - startTime) / 1000)}s`,
+  );
 }
 
 export async function addSubdomain(
