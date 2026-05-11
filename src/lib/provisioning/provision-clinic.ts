@@ -10,6 +10,7 @@ import {
   addVercelEnvVars,
   createVercelProject,
   deleteVercelProject,
+  disableDeploymentProtection,
   triggerDeploy,
 } from "./vercel";
 
@@ -88,6 +89,7 @@ export async function provisionClinic(clinicId: string): Promise<void> {
         const result = await createVercelProject(clinic.slug, repoFullName);
         vercelProjectId = result.projectId;
         await addVercelEnvVars(vercelProjectId, clinic.slug);
+        await disableDeploymentProtection(vercelProjectId);
         await db
           .update(schema.clinics)
           .set({ vercelProjectId })

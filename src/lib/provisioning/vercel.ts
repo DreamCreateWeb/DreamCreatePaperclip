@@ -51,6 +51,20 @@ export async function createVercelProject(
   return { projectId: data.id };
 }
 
+export async function disableDeploymentProtection(projectId: string): Promise<void> {
+  const res = await vercelFetch(`/v9/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ ssoProtection: null, passwordProtection: null }),
+  });
+  if (!res.ok) {
+    console.warn(
+      "[vercel] disableDeploymentProtection soft-fail:",
+      res.status,
+      await res.text().catch(() => ""),
+    );
+  }
+}
+
 export async function addVercelEnvVars(
   projectId: string,
   clinicSlug: string,
