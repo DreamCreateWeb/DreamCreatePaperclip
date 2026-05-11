@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { getDb, schema } from "@/src/db/client";
+import { registerUptimeMonitor, removeUptimeMonitor } from "@/src/lib/uptime";
 
 import { cloneTemplateRepo, deleteRepo, getRepoId } from "./github";
 import {
@@ -55,6 +56,7 @@ export async function provisionClinic(clinicId: string): Promise<void> {
   let vercelProjectId: string | null = clinic.vercelProjectId ?? null;
   let repoCloned = false;
   let vercelCreated = false;
+  let uptimeMonitorId: string | null = null;
 
   try {
     if (!repoUrl) {
@@ -99,6 +101,20 @@ export async function provisionClinic(clinicId: string): Promise<void> {
           .where(eq(schema.clinics.id, clinicId));
         await addSubdomain(pid, clinic.slug);
       });
+
+      // Uptime monitoring — soft-fail so a missing token doesn't block provisioning
+      const domain = `clinic-${clinic.slug}.dreamcreate.web`;
+      uptimeMonitorId = await registerUptimeMonitor(clinic.slug, domain).catch((e) => {
+        console.error("[provision] uptime registration failed (non-fatal)", e);
+        return null;
+      });
+      if (uptimeMonitorId) {
+        await db
+          .update(schema.clinics)
+          .set({ uptimeMonitorId })
+          .where(eq(schema.clinics.id, clinicId))
+          .catch(() => {});
+      }
     }
 
     await db
@@ -106,6 +122,11 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       .set({ status: "live" })
       .where(eq(schema.clinics.id, clinicId));
   } catch (err) {
+    if (uptimeMonitorId) {
+      await removeUptimeMonitor(uptimeMonitorId).catch((e) => {
+        console.error("[provision] rollback uptime monitor failed", e);
+      });
+    }
     if (vercelCreated && vercelProjectId) {
       try {
         await deleteVercelProject(vercelProjectId);

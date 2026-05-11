@@ -184,6 +184,7 @@ export const clinics = pgTable(
     vercelProjectId: text("vercel_project_id"),
     vercelDeploymentUrl: text("vercel_deployment_url"),
     customDomain: text("custom_domain"),
+    uptimeMonitorId: text("uptime_monitor_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

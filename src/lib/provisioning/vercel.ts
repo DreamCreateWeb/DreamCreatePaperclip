@@ -55,16 +55,27 @@ export async function addVercelEnvVars(
   projectId: string,
   clinicSlug: string,
 ): Promise<void> {
+  const envVars: Array<{ key: string; value: string; type: string; target: string[] }> = [
+    {
+      key: "CLINIC_SLUG",
+      value: clinicSlug,
+      type: "plain",
+      target: ["production", "preview", "development"],
+    },
+  ];
+
+  // Propagate Sentry DSN from platform to clinic Vercel project
+  const sentryDsn = process.env.SENTRY_DSN;
+  if (sentryDsn) {
+    envVars.push(
+      { key: "SENTRY_DSN", value: sentryDsn, type: "plain", target: ["production", "preview", "development"] },
+      { key: "NEXT_PUBLIC_SENTRY_DSN", value: sentryDsn, type: "plain", target: ["production", "preview", "development"] },
+    );
+  }
+
   const res = await vercelFetch(`/v10/projects/${projectId}/env`, {
     method: "POST",
-    body: JSON.stringify([
-      {
-        key: "CLINIC_SLUG",
-        value: clinicSlug,
-        type: "plain",
-        target: ["production", "preview", "development"],
-      },
-    ]),
+    body: JSON.stringify(envVars),
   });
   if (!res.ok) {
     const err = await res.text();
