@@ -61,7 +61,7 @@ export function HoursLocationCard({ clinic, basePath }: Props) {
                 color: "var(--clinic-primary-fg)",
               }}
             >
-              Get directions
+              Contact us
             </a>
           </div>
         </div>

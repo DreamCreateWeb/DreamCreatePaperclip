@@ -13,7 +13,7 @@ export function StickyCtaBar({ clinic, basePath }: Props) {
   const phone = telHref(clinic.contactPhone);
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-40 flex gap-0 border-t border-rule bg-white shadow-[0_-2px_12px_rgba(0,0,0,.08)] md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 flex gap-0 border-t border-rule bg-white shadow-[0_-2px_12px_rgba(0,0,0,.08)] pb-[env(safe-area-inset-bottom)] md:hidden"
       role="complementary"
       aria-label="Quick actions"
     >

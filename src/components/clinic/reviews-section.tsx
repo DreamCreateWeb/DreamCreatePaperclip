@@ -54,7 +54,8 @@ export function ReviewsSection({ reviews, avgRating, reviewCount, basePath }: Pr
           </div>
           <Link
             href={`${basePath}/reviews` as unknown as Route}
-            className="text-xs font-medium uppercase tracking-[0.16em] text-accent underline-offset-4 hover:underline"
+            className="text-xs font-medium uppercase tracking-[0.16em] underline-offset-4 hover:underline"
+            style={{ color: "var(--clinic-primary)" }}
           >
             Leave a review →
           </Link>
@@ -93,7 +94,8 @@ export function ReviewsSection({ reviews, avgRating, reviewCount, basePath }: Pr
           <div className="mt-8 text-center">
             <Link
               href={`${basePath}/reviews` as unknown as Route}
-              className="text-sm font-medium text-accent underline-offset-4 hover:underline"
+              className="text-sm font-medium underline-offset-4 hover:underline"
+              style={{ color: "var(--clinic-primary)" }}
             >
               View all {reviewCount} reviews →
             </Link>

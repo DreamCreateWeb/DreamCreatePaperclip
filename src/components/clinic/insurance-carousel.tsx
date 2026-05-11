@@ -20,9 +20,9 @@ export function InsuranceCarousel({ providers, heading }: Props) {
     >
       <div className="mx-auto max-w-6xl px-6">
         {heading ? (
-          <h2 className="mb-8 text-center text-xs font-medium uppercase tracking-[0.22em] text-ink-muted">
+          <p className="mb-8 text-center text-xs font-medium uppercase tracking-[0.22em] text-ink-muted">
             {heading}
-          </h2>
+          </p>
         ) : null}
 
         {/* Scrollable row */}
