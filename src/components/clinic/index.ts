@@ -16,3 +16,5 @@ export type { BeforeAfterPair } from "./before-after-gallery";
 export { InsuranceCarousel } from "./insurance-carousel";
 export type { InsuranceProvider } from "./insurance-carousel";
 export { StickyCtaBar } from "./sticky-bar";
+export { Testimonials } from "./testimonials";
+export type { Testimonial } from "./testimonials";

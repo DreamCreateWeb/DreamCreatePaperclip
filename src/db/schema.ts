@@ -116,6 +116,14 @@ export type BeforeAfterPair = {
   after: { src: string; alt: string };
 };
 
+export type Testimonial = {
+  name: string;
+  photo?: string;
+  rating: number;
+  quote: string;
+  treatmentType?: string;
+};
+
 export const DAYS_OF_WEEK = [
   "mon",
   "tue",
@@ -187,6 +195,7 @@ export const clinics = pgTable(
     bookingConfig: jsonb("booking_config").$type<ClinicBookingConfig>(),
     reviewConfig: jsonb("review_config").$type<ClinicReviewConfig>(),
     beforeAfterPairs: jsonb("before_after_pairs").$type<BeforeAfterPair[]>(),
+    testimonials: jsonb("testimonials").$type<Testimonial[]>().notNull().default([]),
     status: clinicStatus("status").notNull().default("draft"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),

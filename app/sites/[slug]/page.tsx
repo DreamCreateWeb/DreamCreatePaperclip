@@ -12,6 +12,7 @@ import { ReviewsSection } from "@/src/components/clinic/reviews-section";
 import { ServicesGrid } from "@/src/components/clinic/services-grid";
 import { StickyCtaBar } from "@/src/components/clinic/sticky-bar";
 import { TeamGrid } from "@/src/components/clinic/team-grid";
+import { Testimonials } from "@/src/components/clinic/testimonials";
 import { resolveBrand } from "@/src/lib/clinic/brand";
 import { getClinicBySlug } from "@/src/lib/clinic/get-clinic";
 import { aggregateRatingJsonLd, localBusinessJsonLd } from "@/src/lib/clinic/jsonld";
@@ -114,6 +115,11 @@ export default async function ClinicHomePage({
           team={clinic.team.slice(0, 3)}
           heading="The team you'll meet"
           intro="Friendly, credentialed, and genuinely glad to see you."
+        />
+
+        <Testimonials
+          testimonials={clinic.testimonials}
+          heading="What our patients say"
         />
 
         <ReviewsSection

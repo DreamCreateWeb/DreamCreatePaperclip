@@ -1,4 +1,4 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, count, eq, inArray, ne } from "drizzle-orm";
 
 import { getDb } from "@/src/db/client";
 import { normalizeEmail } from "@/src/lib/auth/admins";
@@ -123,4 +123,52 @@ export async function listClinicOwners(): Promise<
     clinic,
     owner: ownersByClinic.get(clinic.id) ?? null,
   }));
+}
+
+export const CLINIC_LIST_PAGE_SIZE = 50;
+
+export async function listClinicsAdminView(page: number): Promise<{
+  rows: Array<{ clinic: Clinic; owner: ClinicOwnerUser | null }>;
+  total: number;
+  pageSize: number;
+}> {
+  const db = getDb();
+  const offset = (page - 1) * CLINIC_LIST_PAGE_SIZE;
+
+  const [totalResult, pageClinicRows] = await Promise.all([
+    db.select({ value: count() }).from(clinics),
+    db
+      .select()
+      .from(clinics)
+      .orderBy(clinics.createdAt)
+      .limit(CLINIC_LIST_PAGE_SIZE)
+      .offset(offset),
+  ]);
+
+  const total = totalResult[0]?.value ?? 0;
+  if (pageClinicRows.length === 0) {
+    return { rows: [], total, pageSize: CLINIC_LIST_PAGE_SIZE };
+  }
+
+  const clinicIds = pageClinicRows.map((c) => c.id);
+  const ownerRows = await db
+    .select()
+    .from(clinicOwnerUsers)
+    .where(
+      clinicIds.length === 1
+        ? eq(clinicOwnerUsers.clinicId, clinicIds[0])
+        : inArray(clinicOwnerUsers.clinicId, clinicIds),
+    );
+
+  const ownersByClinic = new Map<string, ClinicOwnerUser>();
+  for (const row of ownerRows) ownersByClinic.set(row.clinicId, row);
+
+  return {
+    rows: pageClinicRows.map((clinic) => ({
+      clinic,
+      owner: ownersByClinic.get(clinic.id) ?? null,
+    })),
+    total,
+    pageSize: CLINIC_LIST_PAGE_SIZE,
+  };
 }
