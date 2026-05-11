@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export type BeforeAfterPair = {
   label: string;
@@ -45,11 +46,12 @@ export function BeforeAfterGallery({ pairs, heading, intro }: Props) {
         {/* Main image */}
         <div className="overflow-hidden rounded-card border border-rule bg-white">
           <div className="relative aspect-[4/3] w-full overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={view === "before" ? current.before.src : current.after.src}
               alt={view === "before" ? current.before.alt : current.after.alt}
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 700px"
             />
             <span
               className="absolute left-3 top-3 rounded-pill px-3 py-1 text-xs font-semibold uppercase tracking-wide"
@@ -99,11 +101,13 @@ export function BeforeAfterGallery({ pairs, heading, intro }: Props) {
                   }`}
                   aria-label={pair.label}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={pair.after.src}
                     alt={pair.after.alt}
+                    width={80}
+                    height={80}
                     className="aspect-square w-full object-cover"
+                    sizes="80px"
                   />
                 </button>
                 <p className="mt-1 text-center text-xs text-ink-muted">{pair.label}</p>

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export type InsuranceProvider = {
   name: string;
   logoUrl?: string;
@@ -25,11 +27,13 @@ export function InsuranceCarousel({ providers, heading }: Props) {
           {providers.map((p) => (
             <li key={p.name}>
               {p.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={p.logoUrl}
                   alt={p.name}
+                  width={80}
+                  height={32}
                   className="h-8 w-auto grayscale opacity-70 transition hover:grayscale-0 hover:opacity-100"
+                  sizes="80px"
                 />
               ) : (
                 <span className="rounded-pill border border-rule bg-white px-4 py-2 text-sm font-medium text-ink-muted">
