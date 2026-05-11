@@ -12,13 +12,28 @@ All components live in `src/components/clinic/` and are re-exported from `src/co
 |------|------|----------|-------------|
 | `clinic` | `Clinic` | ✅ | Full clinic row from DB |
 | `basePath` | `string` | ✅ | e.g. `/sites/musallam` |
-| `current` | `"home" \| "services" \| "team" \| "book" \| "contact"` | — | Active nav item |
+| `current` | `"home" \| "services" \| "team" \| "contact"` | — | Active nav item |
 
 ---
 
 ## ClinicHero
 
 `import { ClinicHero } from "@/src/components/clinic"`
+
+The default "warm" template hero. Full-width split layout: text left, brand-coloured image card right (desktop only).
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `clinic` | `Clinic` | ✅ | Full clinic row |
+| `basePath` | `string` | ✅ | Prefix for internal links |
+
+---
+
+## ClinicHeroModern
+
+`import { ClinicHeroModern } from "@/src/components/clinic"`
+
+The "modern" template hero. Centered, white background, thin accent bar at top, with trust badges below the CTAs. Used automatically when `clinic.brand.template === "modern"`.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
@@ -97,6 +112,8 @@ When `logoUrl` is absent, renders a pill badge with the insurer name. When prese
 `import { BeforeAfterGallery, type BeforeAfterPair } from "@/src/components/clinic"`
 
 Client component — uses `"use client"`.
+
+> **Note:** This component is exported and production-ready but is not yet wired into the default home page template (`app/sites/[slug]/page.tsx`). See engineering backlog for the wiring ticket.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
@@ -192,6 +209,32 @@ Client component — submits to `POST /api/clinic/reviews`.
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `clinicId` | `string` | ✅ | UUID of the clinic |
+
+---
+
+## ClinicFooter
+
+`import { ClinicFooter } from "@/src/components/clinic"`
+
+Four-column grid footer: clinic name/tagline, address, contact info, and office hours. Auto-populated from clinic data. Rendered by the site layout (`app/sites/[slug]/layout.tsx`) — do not add it inside a page component.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `clinic` | `Clinic` | ✅ | Full clinic row |
+| `basePath` | `string` | ✅ | For internal links (e.g. contact page) |
+
+---
+
+## ClinicProvider
+
+`import { ClinicProvider } from "@/src/components/clinic"`
+
+Context provider that makes the current `Clinic` object available to descendant client components via `useClinic()`. Wrap the site layout or page with this if you need to access clinic data in deep client components.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `clinic` | `Clinic` | ✅ | Full clinic row |
+| `children` | `React.ReactNode` | ✅ | Subtree |
 
 ---
 
