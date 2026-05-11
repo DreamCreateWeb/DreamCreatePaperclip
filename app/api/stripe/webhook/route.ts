@@ -33,6 +33,32 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const clinicId = session.metadata?.clinicId;
+        if (clinicId) {
+          const subscriptionId =
+            typeof session.subscription === "string"
+              ? session.subscription
+              : (session.subscription as { id?: string } | null)?.id ?? null;
+          await getDb()
+            .update(clinics)
+            .set({
+              status: "live",
+              ...(subscriptionId
+                ? { stripeSubscriptionId: subscriptionId }
+                : {}),
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(clinics.id, clinicId),
+                eq(clinics.status, "pending_payment"),
+              ),
+            );
+        }
+        break;
+      }
       case "customer.subscription.deleted": {
         const sub = event.data.object;
         await getDb()

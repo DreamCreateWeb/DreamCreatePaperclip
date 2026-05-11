@@ -60,9 +60,13 @@ export async function POST(req: Request) {
     stripeCustomerId = customer.id;
   }
 
-  const priceId = process.env.STRIPE_PRICE_ID;
+  const priceId =
+    process.env.STRIPE_PRICE_CLINIC_MONTHLY ?? process.env.STRIPE_PRICE_ID;
   if (!priceId) {
-    return NextResponse.json({ error: "STRIPE_PRICE_ID not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "STRIPE_PRICE_CLINIC_MONTHLY not configured" },
+      { status: 503 },
+    );
   }
 
   const base = appUrl();
