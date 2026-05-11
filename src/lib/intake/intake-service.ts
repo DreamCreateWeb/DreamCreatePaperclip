@@ -3,6 +3,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/src/db/client";
 import {
   auditEvents,
+  clinics,
   intakeFormTemplates,
   intakeSubmissions,
   type IntakeFormTemplate,
@@ -11,6 +12,7 @@ import {
 } from "@/src/db/schema";
 
 import { DEFAULT_INTAKE_SECTIONS } from "./default-template";
+import { notifyOwnerNewIntakeSubmission } from "./notify";
 import type { IntakeSubmitPayload } from "./intake-schema";
 
 export async function getActiveTemplateForClinic(
@@ -77,6 +79,18 @@ export async function createIntakeSubmission(
     entityId: row.id,
     payload: { clinicId, templateId },
   });
+
+  const [clinic] = await db
+    .select()
+    .from(clinics)
+    .where(eq(clinics.id, clinicId))
+    .limit(1);
+
+  if (clinic) {
+    await notifyOwnerNewIntakeSubmission(clinic, row).catch((err) => {
+      console.error("Failed to send intake notification:", err);
+    });
+  }
 
   return row;
 }
