@@ -13,13 +13,19 @@ async function sendEmail(payload: SendArgs): Promise<void> {
   const from =
     process.env.INTAKE_EMAIL_FROM ?? process.env.ADMIN_LOGIN_EMAIL_FROM;
 
+  // SECURITY: In dev/test mode, log email for inspection but redact patient PHI.
   if (!apiKey || !from) {
     const banner = "===== Dream Create intake email =====";
     console.log(`\n${banner}`);
     console.log(`To:      ${payload.to}`);
     console.log(`Subject: ${payload.subject}`);
     if (payload.replyTo) console.log(`Reply-To: ${payload.replyTo}`);
-    console.log(payload.text);
+    // Log redacted text: replace patient name and email with placeholders to avoid logging PHI
+    const redactedText = payload.text.replace(
+      /Patient: .*$/m,
+      "Patient: [REDACTED]",
+    );
+    console.log(redactedText);
     console.log(`${"=".repeat(banner.length)}\n`);
     return;
   }
@@ -60,6 +66,9 @@ export async function notifyOwnerNewIntakeSubmission(
   clinic: Pick<Clinic, "name" | "contactEmail">,
   submission: IntakeSubmission,
 ): Promise<void> {
+  // SECURITY: This function receives decrypted PHI (patient name, email, DOB, phone).
+  // Patient data MUST appear only in the final email body sent to clinic owner.
+  // Do NOT log patient name/email/DOB/phone in console, error messages, or headers.
   const text = [
     `New patient intake form submitted for ${clinic.name}.`,
     "",
