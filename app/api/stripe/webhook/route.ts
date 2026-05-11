@@ -1,12 +1,49 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/src/db/client";
-import { clinics } from "@/src/db/schema";
+import { clinics, provisioningRuns } from "@/src/db/schema";
 import { getStripe } from "@/src/lib/stripe/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function triggerProvisioning(clinicId: string) {
+  const db = getDb();
+
+  // Idempotency check: skip if active provisioning run exists
+  const activeRun = await db
+    .select()
+    .from(provisioningRuns)
+    .where(
+      and(
+        eq(provisioningRuns.clinicId, clinicId),
+        ne(provisioningRuns.status, "failed"),
+      ),
+    )
+    .limit(1);
+
+  if (activeRun.length > 0) {
+    console.log(
+      `[stripe/webhook] skipping provisioning for clinic ${clinicId}: active run exists`,
+    );
+    return;
+  }
+
+  // Insert provisioning run
+  await db.insert(provisioningRuns).values({
+    clinicId,
+    step: "clone",
+    status: "pending",
+  });
+
+  // TODO: Call orchestrator to start provisioning (DRE-40)
+  // For now, this is a stub:
+  // const result = await runProvisioning(clinicId);
+  console.log(
+    `[stripe/webhook] provisioning queued for clinic ${clinicId}`,
+  );
+}
 
 export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -32,6 +69,8 @@ export async function POST(req: Request) {
   }
 
   try {
+    const db = getDb();
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
@@ -41,68 +80,88 @@ export async function POST(req: Request) {
             typeof session.subscription === "string"
               ? session.subscription
               : (session.subscription as { id?: string } | null)?.id ?? null;
-          await getDb()
+          const customerId =
+            typeof session.customer === "string"
+              ? session.customer
+              : session.customer?.id ?? null;
+
+          await db
             .update(clinics)
             .set({
-              status: "live",
+              status: "pending_payment",
               ...(subscriptionId
                 ? { stripeSubscriptionId: subscriptionId }
                 : {}),
+              ...(customerId ? { stripeCustomerId: customerId } : {}),
               updatedAt: new Date(),
             })
-            .where(
-              and(
-                eq(clinics.id, clinicId),
-                eq(clinics.status, "pending_payment"),
-              ),
-            );
+            .where(eq(clinics.id, clinicId));
         }
         break;
       }
-      case "customer.subscription.deleted": {
-        const sub = event.data.object;
-        await getDb()
-          .update(clinics)
-          .set({ status: "cancelled", updatedAt: new Date() })
-          .where(eq(clinics.stripeSubscriptionId, sub.id));
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object;
+        const customerId =
+          typeof invoice.customer === "string"
+            ? invoice.customer
+            : invoice.customer?.id;
+
+        if (customerId) {
+          // Find clinic by customer ID
+          const clinicResult = await db
+            .select()
+            .from(clinics)
+            .where(eq(clinics.stripeCustomerId, customerId))
+            .limit(1);
+
+          const clinic = clinicResult[0];
+          if (clinic && clinic.status === "pending_payment") {
+            // Update clinic to provisioning
+            await db
+              .update(clinics)
+              .set({ status: "provisioning", updatedAt: new Date() })
+              .where(eq(clinics.id, clinic.id));
+
+            // Trigger provisioning
+            await triggerProvisioning(clinic.id);
+          }
+        }
         break;
       }
+
       case "invoice.payment_failed": {
         const invoice = event.data.object;
         const customerId =
           typeof invoice.customer === "string"
             ? invoice.customer
             : invoice.customer?.id;
+
         if (customerId) {
-          await getDb()
+          await db
             .update(clinics)
-            .set({ status: "past_due", updatedAt: new Date() })
+            .set({ status: "paused", updatedAt: new Date() })
             .where(eq(clinics.stripeCustomerId, customerId));
+
+          // TODO: Alert ops via Google Chat webhook
+          console.log(
+            `[stripe/webhook] payment failed for customer ${customerId}`,
+          );
         }
         break;
       }
-      case "invoice.paid": {
-        const invoice = event.data.object;
-        const customerId =
-          typeof invoice.customer === "string"
-            ? invoice.customer
-            : invoice.customer?.id;
-        if (customerId) {
-          await getDb()
-            .update(clinics)
-            .set({ status: "live", updatedAt: new Date() })
-            .where(
-              and(
-                eq(clinics.stripeCustomerId, customerId),
-                eq(clinics.status, "past_due"),
-              ),
-            );
-        }
+
+      case "customer.subscription.deleted": {
+        const sub = event.data.object;
+        await db
+          .update(clinics)
+          .set({ status: "cancelled", updatedAt: new Date() })
+          .where(eq(clinics.stripeSubscriptionId, sub.id));
         break;
       }
     }
   } catch (err) {
-    console.error("[stripe/webhook] db update failed", err);
+    console.error("[stripe/webhook] processing failed", err);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 
