@@ -58,7 +58,7 @@ export function ClinicHeroPediatric({ clinic, basePath }: Props) {
             style={{ color: "var(--clinic-primary-fg)" }}
           >
             We make dental care comfortable and enjoyable for kids of all ages.
-            Our team knows how to work with children — we listen, we're gentle,
+            Our team knows how to work with children — we listen, we&apos;re gentle,
             and we make every visit a positive experience for both kids and
             parents.
           </p>

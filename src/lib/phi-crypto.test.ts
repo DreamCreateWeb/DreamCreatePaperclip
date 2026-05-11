@@ -1,5 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { createCipheriv, randomBytes } from "node:crypto";
 import { encryptPhi, decryptPhi } from "./phi-crypto";
 
 const KEY_V1 = "a".repeat(64); // 32 bytes of 0xaa
@@ -56,7 +57,6 @@ describe("phi-crypto", () => {
   it("decrypts legacy 3-part ciphertext using version 1 key", () => {
     // Simulate a pre-versioning ciphertext (3-part format) by crafting one manually
     // using the Node.js crypto API directly to avoid calling encryptPhi (which now adds v prefix)
-    const { createCipheriv, randomBytes } = require("crypto");
     const key = Buffer.from(KEY_V1, "hex");
     const iv = randomBytes(12);
     const cipher = createCipheriv("aes-256-gcm", key, iv);

@@ -1,6 +1,6 @@
 import { lt } from "drizzle-orm";
 
-import { getDb } from "@/src/db/client";
+import type { getDb } from "@/src/db/client";
 import { processedStripeEvents } from "@/src/db/schema";
 
 export type DrizzleDb = ReturnType<typeof getDb>;
