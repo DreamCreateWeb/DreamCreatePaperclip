@@ -1,13 +1,21 @@
 name: Lighthouse CI
 
+# Runs only on PRs that touch the clinic template.
+# Escape hatch: add the `skip-lighthouse` label to bypass this check for one-off exceptions.
 on:
-  push:
-    branches: [main]
   pull_request:
+    paths:
+      - "app/sites/**"
+      - "src/components/**"
+      - "app/globals.css"
+      - "app/layout.tsx"
+      - ".lighthouserc.js"
 
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
+    # Skip if the PR carries the escape-hatch label.
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-lighthouse')"
     steps:
       - uses: actions/checkout@v4
 
