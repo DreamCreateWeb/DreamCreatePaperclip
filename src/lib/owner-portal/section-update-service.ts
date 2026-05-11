@@ -4,6 +4,7 @@ import { getDb } from "@/src/db/client";
 import {
   auditEvents,
   clinics,
+  type BeforeAfterPair,
   type ClinicBrand,
   type ClinicService,
   type ClinicTeamMember,
@@ -68,5 +69,17 @@ export async function applyContactEmailUpdate(
     { contactEmail },
     ["contactEmail"],
     "clinic.contactEmail.updated",
+  );
+}
+
+export async function applyBeforeAfterUpdate(
+  actor: Actor,
+  beforeAfterPairs: BeforeAfterPair[],
+): Promise<void> {
+  await applyAndAudit(
+    actor,
+    { beforeAfterPairs },
+    ["beforeAfterPairs"],
+    "clinic.beforeAfterPairs.updated",
   );
 }

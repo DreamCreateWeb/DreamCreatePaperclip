@@ -13,6 +13,11 @@ const SITE_NAV: ReadonlyArray<{ href: Route; label: string; match: string }> = [
   },
   { href: "/portal/site/team", label: "Team", match: "/portal/site/team" },
   { href: "/portal/site/brand", label: "Brand", match: "/portal/site/brand" },
+  {
+    href: "/portal/site/before-after",
+    label: "Before & After",
+    match: "/portal/site/before-after",
+  },
 ];
 
 export function SiteSubNav() {

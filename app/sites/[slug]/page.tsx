@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { BeforeAfterGallery } from "@/src/components/clinic/before-after-gallery";
 import { ClinicHeader } from "@/src/components/clinic/header";
 import { ClinicHero } from "@/src/components/clinic/hero";
 import { ClinicHeroModern } from "@/src/components/clinic/hero-modern";
@@ -98,6 +99,12 @@ export default async function ClinicHomePage({
         <InsuranceCarousel
           providers={DEFAULT_INSURERS}
           heading="We accept most major insurance plans"
+        />
+
+        <BeforeAfterGallery
+          pairs={clinic.beforeAfterPairs ?? []}
+          heading="Results you can see"
+          intro="Real patients, real transformations."
         />
 
         {/* Modern variant places CTA before team/reviews */}

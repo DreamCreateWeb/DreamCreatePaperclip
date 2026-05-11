@@ -110,6 +110,12 @@ export type ClinicTeamMember = {
   photoUrl?: string;
 };
 
+export type BeforeAfterPair = {
+  label: string;
+  before: { src: string; alt: string };
+  after: { src: string; alt: string };
+};
+
 export const DAYS_OF_WEEK = [
   "mon",
   "tue",
@@ -180,6 +186,7 @@ export const clinics = pgTable(
     social: jsonb("social").$type<ClinicSocial>(),
     bookingConfig: jsonb("booking_config").$type<ClinicBookingConfig>(),
     reviewConfig: jsonb("review_config").$type<ClinicReviewConfig>(),
+    beforeAfterPairs: jsonb("before_after_pairs").$type<BeforeAfterPair[]>(),
     status: clinicStatus("status").notNull().default("draft"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),

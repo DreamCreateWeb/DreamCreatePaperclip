@@ -70,6 +70,18 @@ export const addressSchema = z.object({
 export const CLINIC_TEMPLATES = ["warm", "modern"] as const;
 export type ClinicTemplate = (typeof CLINIC_TEMPLATES)[number];
 
+export const beforeAfterPairSchema = z.object({
+  label: z.string().trim().min(2, "Label is required").max(80),
+  before: z.object({
+    src: z.string().trim().url("Enter a valid before image URL").max(500),
+    alt: z.string().trim().min(2, "Before image description is required").max(200),
+  }),
+  after: z.object({
+    src: z.string().trim().url("Enter a valid after image URL").max(500),
+    alt: z.string().trim().min(2, "After image description is required").max(200),
+  }),
+});
+
 export const brandSchema = z.object({
   primaryColor: z
     .string()

@@ -3,11 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 
-export type BeforeAfterPair = {
-  label: string;
-  before: { src: string; alt: string };
-  after: { src: string; alt: string };
-};
+import type { BeforeAfterPair } from "@/src/db/schema";
+
+export type { BeforeAfterPair };
 
 type Props = {
   pairs: BeforeAfterPair[];
