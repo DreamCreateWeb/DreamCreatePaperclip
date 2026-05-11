@@ -5,8 +5,10 @@ import { ClinicHeader } from "@/src/components/clinic/header";
 import { ClinicHero } from "@/src/components/clinic/hero";
 import { CtaBand } from "@/src/components/clinic/cta-band";
 import { HoursLocationCard } from "@/src/components/clinic/hours-card";
+import { InsuranceCarousel } from "@/src/components/clinic/insurance-carousel";
 import { ReviewsSection } from "@/src/components/clinic/reviews-section";
 import { ServicesGrid } from "@/src/components/clinic/services-grid";
+import { StickyCtaBar } from "@/src/components/clinic/sticky-bar";
 import { TeamGrid } from "@/src/components/clinic/team-grid";
 import { getClinicBySlug } from "@/src/lib/clinic/get-clinic";
 import { aggregateRatingJsonLd, localBusinessJsonLd } from "@/src/lib/clinic/jsonld";
@@ -39,6 +41,17 @@ export async function generateMetadata({
     : `${clinic.name} — comfortable, modern dentistry. Same-day appointments available.`;
   return buildClinicMetadata({ clinic, description });
 }
+
+// Common insurance networks accepted at most Arkansas dental practices.
+// Clinics can override this list in the future via admin UI.
+const DEFAULT_INSURERS = [
+  { name: "Delta Dental" },
+  { name: "BlueCross BlueShield" },
+  { name: "Cigna" },
+  { name: "Aetna" },
+  { name: "United Healthcare" },
+  { name: "MetLife" },
+];
 
 export default async function ClinicHomePage({
   params,
@@ -84,9 +97,14 @@ export default async function ClinicHomePage({
           reviewCount={stats.reviewCount}
           basePath={basePath}
         />
+        <InsuranceCarousel
+          providers={DEFAULT_INSURERS}
+          heading="We accept most major insurance plans"
+        />
         <HoursLocationCard clinic={clinic} basePath={basePath} />
         <CtaBand clinic={clinic} basePath={basePath} />
       </main>
+      <StickyCtaBar clinic={clinic} basePath={basePath} />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger

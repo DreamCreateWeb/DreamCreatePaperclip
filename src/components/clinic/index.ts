@@ -10,3 +10,8 @@ export { TeamGrid } from "./team-grid";
 export { ContactForm } from "./contact-form";
 export { ReviewForm } from "./review-form";
 export { ReviewsSection } from "./reviews-section";
+export { BeforeAfterGallery } from "./before-after-gallery";
+export type { BeforeAfterPair } from "./before-after-gallery";
+export { InsuranceCarousel } from "./insurance-carousel";
+export type { InsuranceProvider } from "./insurance-carousel";
+export { StickyCtaBar } from "./sticky-bar";
