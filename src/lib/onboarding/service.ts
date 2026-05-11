@@ -80,6 +80,7 @@ export async function createOnboardingSubmission(
     primaryColor: payload.brand.primaryColor,
     accentColor: payload.brand.accentColor,
     logoUrl: payload.brand.logoUrl,
+    template: payload.brand.template ?? "warm",
   };
 
   const services: ClinicService[] = payload.services.map((s) => ({

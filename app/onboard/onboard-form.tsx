@@ -112,6 +112,7 @@ export function OnboardForm() {
   const [stateCode, setStateCode] = useState("AR");
   const [postalCode, setPostalCode] = useState("");
 
+  const [template, setTemplate] = useState<"warm" | "modern">("warm");
   const [primaryColor, setPrimaryColor] = useState("#0a3d2e");
   const [accentColor, setAccentColor] = useState("#d8ebe2");
   const [logoUrl, setLogoUrl] = useState("");
@@ -150,6 +151,7 @@ export function OnboardForm() {
         setCity(state.city || "");
         setStateCode(state.stateCode || "AR");
         setPostalCode(state.postalCode || "");
+        setTemplate(state.template || "warm");
         setPrimaryColor(state.primaryColor || "#0a3d2e");
         setAccentColor(state.accentColor || "#d8ebe2");
         setLogoUrl(state.logoUrl || "");
@@ -180,6 +182,7 @@ export function OnboardForm() {
       city,
       stateCode,
       postalCode,
+      template,
       primaryColor,
       accentColor,
       logoUrl,
@@ -204,6 +207,7 @@ export function OnboardForm() {
     city,
     stateCode,
     postalCode,
+    template,
     primaryColor,
     accentColor,
     logoUrl,
@@ -308,6 +312,7 @@ export function OnboardForm() {
         postalCode: postalCode.trim(),
       },
       brand: {
+        template,
         primaryColor: primaryColor.trim(),
         accentColor: accentColor.trim(),
         logoUrl: logoUrl.trim() || undefined,
@@ -653,8 +658,36 @@ export function OnboardForm() {
       <Section
         index={3}
         title="Brand"
-        description="The colors and logo we'll use to make the site feel like yours."
+        description="Choose a template and the colors we'll use to make the site feel like yours."
       >
+        {/* Template picker */}
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted mb-3">
+            Template style
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(["warm", "modern"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTemplate(t)}
+                className={`rounded-card border-2 px-4 py-4 text-left transition ${
+                  template === t
+                    ? "border-accent bg-accent-soft"
+                    : "border-rule bg-white hover:border-ink/30"
+                }`}
+              >
+                <p className="font-medium text-ink capitalize">{t}</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  {t === "warm"
+                    ? "Traditional serif typography, warm earthy tones."
+                    : "Clean sans-serif, minimal layout, high contrast."}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div data-field="brand.primaryColor">
             <FieldShell

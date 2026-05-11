@@ -67,6 +67,9 @@ export const addressSchema = z.object({
     .regex(ZIP_PATTERN, "Enter a valid US ZIP code"),
 });
 
+export const CLINIC_TEMPLATES = ["warm", "modern"] as const;
+export type ClinicTemplate = (typeof CLINIC_TEMPLATES)[number];
+
 export const brandSchema = z.object({
   primaryColor: z
     .string()
@@ -77,6 +80,7 @@ export const brandSchema = z.object({
     .trim()
     .regex(HEX_COLOR, "Use a 6-digit hex like #d8ebe2"),
   logoUrl: optionalUrl(500),
+  template: z.enum(CLINIC_TEMPLATES).optional().default("warm"),
 });
 
 export const serviceSchema = z.object({

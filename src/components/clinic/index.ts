@@ -2,6 +2,7 @@ export { ClinicProvider } from "./clinic-provider";
 export { ClinicHeader } from "./header";
 export { ClinicFooter } from "./footer";
 export { ClinicHero } from "./hero";
+export { ClinicHeroModern } from "./hero-modern";
 export { CtaBand } from "./cta-band";
 export { HoursLocationCard } from "./hours-card";
 export { MapEmbed } from "./map-embed";

@@ -1,8 +1,10 @@
 import type * as React from "react";
-import type { ClinicBrand } from "@/src/db/schema";
+import type { ClinicBrand, ClinicTemplate } from "@/src/db/schema";
 
-const FALLBACK_PRIMARY = "#0a3d2e";
-const FALLBACK_ACCENT = "#d8ebe2";
+const WARM_PRIMARY = "#0a3d2e";
+const WARM_ACCENT = "#d8ebe2";
+const MODERN_PRIMARY = "#1a1a2e";
+const MODERN_ACCENT = "#e8e8f8";
 
 export type ResolvedBrand = {
   primary: string;
@@ -10,6 +12,7 @@ export type ResolvedBrand = {
   accent: string;
   accentFg: string;
   primarySoft: string;
+  template: ClinicTemplate;
 };
 
 function clampHex(value: string | undefined, fallback: string): string {
@@ -48,23 +51,36 @@ function softTint(hex: string, mix = 0.88): string {
 }
 
 export function resolveBrand(brand: ClinicBrand | null | undefined): ResolvedBrand {
-  const primary = clampHex(brand?.primaryColor, FALLBACK_PRIMARY);
-  const accent = clampHex(brand?.accentColor, FALLBACK_ACCENT);
+  const template: ClinicTemplate = brand?.template ?? "warm";
+  const fallbackPrimary = template === "modern" ? MODERN_PRIMARY : WARM_PRIMARY;
+  const fallbackAccent = template === "modern" ? MODERN_ACCENT : WARM_ACCENT;
+  const primary = clampHex(brand?.primaryColor, fallbackPrimary);
+  const accent = clampHex(brand?.accentColor, fallbackAccent);
   return {
     primary,
     primaryFg: readableForeground(primary),
     accent,
     accentFg: readableForeground(accent),
     primarySoft: softTint(primary),
+    template,
   };
 }
 
 export function brandStyle(brand: ResolvedBrand): React.CSSProperties {
-  return {
+  const base: React.CSSProperties = {
     "--clinic-primary": brand.primary,
     "--clinic-primary-fg": brand.primaryFg,
     "--clinic-primary-soft": brand.primarySoft,
     "--clinic-accent": brand.accent,
     "--clinic-accent-fg": brand.accentFg,
+    "--clinic-template": brand.template,
   } as React.CSSProperties;
+
+  if (brand.template === "modern") {
+    // Override display font to sans-serif for the modern minimalist variant
+    (base as Record<string, string>)["--font-display"] =
+      '"Inter", ui-sans-serif, system-ui, -apple-system, sans-serif';
+  }
+
+  return base;
 }

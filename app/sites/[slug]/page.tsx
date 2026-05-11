@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { ClinicHeader } from "@/src/components/clinic/header";
 import { ClinicHero } from "@/src/components/clinic/hero";
+import { ClinicHeroModern } from "@/src/components/clinic/hero-modern";
 import { CtaBand } from "@/src/components/clinic/cta-band";
 import { HoursLocationCard } from "@/src/components/clinic/hours-card";
 import { InsuranceCarousel } from "@/src/components/clinic/insurance-carousel";
@@ -10,6 +11,7 @@ import { ReviewsSection } from "@/src/components/clinic/reviews-section";
 import { ServicesGrid } from "@/src/components/clinic/services-grid";
 import { StickyCtaBar } from "@/src/components/clinic/sticky-bar";
 import { TeamGrid } from "@/src/components/clinic/team-grid";
+import { resolveBrand } from "@/src/lib/clinic/brand";
 import { getClinicBySlug } from "@/src/lib/clinic/get-clinic";
 import { aggregateRatingJsonLd, localBusinessJsonLd } from "@/src/lib/clinic/jsonld";
 import {
@@ -43,7 +45,6 @@ export async function generateMetadata({
 }
 
 // Common insurance networks accepted at most Arkansas dental practices.
-// Clinics can override this list in the future via admin UI.
 const DEFAULT_INSURERS = [
   { name: "Delta Dental" },
   { name: "BlueCross BlueShield" },
@@ -64,6 +65,8 @@ export default async function ClinicHomePage({
 
   const basePath = `/sites/${clinic.slug}`;
   const siteUrl = clinicCanonical(clinic.slug);
+  const brand = resolveBrand(clinic.brand);
+  const isModern = brand.template === "modern";
 
   const [published, stats] = await Promise.all([
     listPublishedReviews(clinic.id),
@@ -80,31 +83,47 @@ export default async function ClinicHomePage({
     <>
       <ClinicHeader clinic={clinic} basePath={basePath} current="home" />
       <main>
-        <ClinicHero clinic={clinic} basePath={basePath} />
+        {isModern ? (
+          <ClinicHeroModern clinic={clinic} basePath={basePath} />
+        ) : (
+          <ClinicHero clinic={clinic} basePath={basePath} />
+        )}
+
         <ServicesGrid
           services={clinic.services.slice(0, 6)}
           heading="Care for every smile"
           intro="A focused set of services so we can do each one beautifully."
         />
+
+        <InsuranceCarousel
+          providers={DEFAULT_INSURERS}
+          heading="We accept most major insurance plans"
+        />
+
+        {/* Modern variant places CTA before team/reviews */}
+        {isModern && <CtaBand clinic={clinic} basePath={basePath} />}
+
         <TeamGrid
           team={clinic.team.slice(0, 3)}
           heading="The team you'll meet"
           intro="Friendly, credentialed, and genuinely glad to see you."
         />
+
         <ReviewsSection
           reviews={published}
           avgRating={stats.avgRating}
           reviewCount={stats.reviewCount}
           basePath={basePath}
         />
-        <InsuranceCarousel
-          providers={DEFAULT_INSURERS}
-          heading="We accept most major insurance plans"
-        />
+
         <HoursLocationCard clinic={clinic} basePath={basePath} />
-        <CtaBand clinic={clinic} basePath={basePath} />
+
+        {/* Warm variant places CTA at the bottom */}
+        {!isModern && <CtaBand clinic={clinic} basePath={basePath} />}
       </main>
+
       <StickyCtaBar clinic={clinic} basePath={basePath} />
+
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger

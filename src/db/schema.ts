@@ -88,11 +88,14 @@ export type ClinicAddress = {
   postalCode: string;
 };
 
+export type ClinicTemplate = "warm" | "modern";
+
 export type ClinicBrand = {
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
+  template?: ClinicTemplate;
 };
 
 export type ClinicService = {
