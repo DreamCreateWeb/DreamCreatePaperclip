@@ -88,7 +88,7 @@ export type ClinicAddress = {
   postalCode: string;
 };
 
-export type ClinicTemplate = "warm" | "modern" | "ortho";
+export type ClinicTemplate = "warm" | "modern" | "ortho" | "pediatric";
 
 export type ClinicBrand = {
   logoUrl?: string;
@@ -604,3 +604,18 @@ export type IntakeSubmissionStatus =
   (typeof intakeSubmissionStatus.enumValues)[number];
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
+
+export const processedStripeEvents = pgTable(
+  "processed_stripe_events",
+  {
+    stripeEventId: text("stripe_event_id").primaryKey(),
+    processedAt: timestamp("processed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("processed_stripe_events_processed_at_idx").on(t.processedAt),
+  ],
+);
+
+export type ProcessedStripeEvent = typeof processedStripeEvents.$inferSelect;

@@ -6,6 +6,7 @@ import { ClinicHeader } from "@/src/components/clinic/header";
 import { ClinicHero } from "@/src/components/clinic/hero";
 import { ClinicHeroModern } from "@/src/components/clinic/hero-modern";
 import { ClinicHeroOrtho } from "@/src/components/clinic/hero-ortho";
+import { ClinicHeroPediatric } from "@/src/components/clinic/hero-pediatric";
 import { CtaBand } from "@/src/components/clinic/cta-band";
 import { HoursLocationCard } from "@/src/components/clinic/hours-card";
 import { InsuranceCarousel } from "@/src/components/clinic/insurance-carousel";
@@ -72,6 +73,7 @@ export default async function ClinicHomePage({
   const brand = resolveBrand(clinic.brand);
   const isModern = brand.template === "modern";
   const isOrtho = brand.template === "ortho";
+  const isPediatric = brand.template === "pediatric";
 
   const [published, stats] = await Promise.all([
     listPublishedReviews(clinic.id),
@@ -90,6 +92,8 @@ export default async function ClinicHomePage({
       <main>
         {isOrtho ? (
           <ClinicHeroOrtho clinic={clinic} basePath={basePath} />
+        ) : isPediatric ? (
+          <ClinicHeroPediatric clinic={clinic} basePath={basePath} />
         ) : isModern ? (
           <ClinicHeroModern clinic={clinic} basePath={basePath} />
         ) : (
@@ -108,6 +112,20 @@ export default async function ClinicHomePage({
               services={clinic.services.slice(0, 6)}
               heading="Orthodontic treatments"
               intro="Every smile is different. We offer options that fit your teeth, your timeline, and your budget."
+            />
+          </>
+        ) : isPediatric ? (
+          <>
+            {/* Pediatric: before/after gallery leads (show healthy transformations for parents) */}
+            <BeforeAfterGallery
+              pairs={clinic.beforeAfterPairs ?? []}
+              heading="Happy, healthy smiles"
+              intro="See the difference great pediatric care makes."
+            />
+            <ServicesGrid
+              services={clinic.services.slice(0, 6)}
+              heading="Services for every age"
+              intro="From the first tooth to the teenage years — we've got care for every stage."
             />
           </>
         ) : (
@@ -130,8 +148,8 @@ export default async function ClinicHomePage({
           heading="We accept most major insurance plans"
         />
 
-        {/* Modern and ortho variants place CTA before team/reviews */}
-        {(isModern || isOrtho) && <CtaBand clinic={clinic} basePath={basePath} />}
+        {/* Modern, ortho, and pediatric variants place CTA before team/reviews */}
+        {(isModern || isOrtho || isPediatric) && <CtaBand clinic={clinic} basePath={basePath} />}
 
         <TeamGrid
           team={clinic.team.slice(0, 3)}
@@ -154,7 +172,7 @@ export default async function ClinicHomePage({
         <HoursLocationCard clinic={clinic} basePath={basePath} />
 
         {/* Warm variant places CTA at the bottom */}
-        {!isModern && !isOrtho && <CtaBand clinic={clinic} basePath={basePath} />}
+        {!isModern && !isOrtho && !isPediatric && <CtaBand clinic={clinic} basePath={basePath} />}
       </main>
 
       <StickyCtaBar clinic={clinic} basePath={basePath} />

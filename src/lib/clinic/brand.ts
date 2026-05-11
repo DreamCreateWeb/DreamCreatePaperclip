@@ -7,6 +7,8 @@ const MODERN_PRIMARY = "#1a1a2e";
 const MODERN_ACCENT = "#e8e8f8";
 const ORTHO_PRIMARY = "#0d4a8a";
 const ORTHO_ACCENT = "#d6eaff";
+const PEDIATRIC_PRIMARY = "#c2185b";
+const PEDIATRIC_ACCENT = "#ffe0f0";
 
 export type ResolvedBrand = {
   primary: string;
@@ -59,13 +61,17 @@ export function resolveBrand(brand: ClinicBrand | null | undefined): ResolvedBra
       ? MODERN_PRIMARY
       : template === "ortho"
         ? ORTHO_PRIMARY
-        : WARM_PRIMARY;
+        : template === "pediatric"
+          ? PEDIATRIC_PRIMARY
+          : WARM_PRIMARY;
   const fallbackAccent =
     template === "modern"
       ? MODERN_ACCENT
       : template === "ortho"
         ? ORTHO_ACCENT
-        : WARM_ACCENT;
+        : template === "pediatric"
+          ? PEDIATRIC_ACCENT
+          : WARM_ACCENT;
   const primary = clampHex(brand?.primaryColor, fallbackPrimary);
   const accent = clampHex(brand?.accentColor, fallbackAccent);
   return {

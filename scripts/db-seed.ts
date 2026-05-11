@@ -230,6 +230,95 @@ async function main() {
     console.log("Ortho fixture clinic already seeded; skipped.");
   }
 
+  // Pediatric fixture clinic — preview for template-pediatric
+  const [pedClinic] = await db
+    .insert(clinics)
+    .values({
+      slug: "happy-smiles-pediatrics",
+      name: "Happy Smiles Pediatric Dentistry",
+      contactEmail: "hello@happysmiles.example",
+      contactPhone: "(479) 555-0168",
+      address: {
+        line1: "1250 S Walton Blvd",
+        city: "Bentonville",
+        state: "AR",
+        postalCode: "72712",
+      },
+      brand: {
+        primaryColor: "#c2185b",
+        accentColor: "#ffe0f0",
+        template: "pediatric",
+      },
+      services: [
+        {
+          name: "Preventive Cleaning",
+          description:
+            "Fun, gentle cleanings that teach kids about healthy teeth habits.",
+        },
+        {
+          name: "Fluoride Treatment",
+          description:
+            "Protects growing teeth and prevents cavities with a light, minty flavor kids enjoy.",
+        },
+        {
+          name: "Cavity Fillings",
+          description:
+            "Fast, comfortable treatment to repair cavities with kid-friendly comfort measures.",
+        },
+        {
+          name: "Sealants",
+          description:
+            "Protective coating on back teeth to prevent cavities where toothbrushes can't reach.",
+        },
+        {
+          name: "Habit Breaking",
+          description:
+            "Gentle guidance to help kids stop thumb sucking and other habits that affect smile development.",
+        },
+        {
+          name: "Emergency Care",
+          description:
+            "Same-day relief for tooth pain, broken teeth, and other dental emergencies.",
+        },
+      ],
+      team: [
+        {
+          name: "Dr. Emily Rodriguez",
+          role: "Pediatric Dentist",
+          bio: "DDS, MS Pediatric Dentistry, Baylor College of Dentistry. Certified in child behavior guidance and sedation.",
+        },
+        {
+          name: "Kayla Patterson",
+          role: "Pediatric Hygienist",
+          bio: "RDH, certified in pediatric oral health. Loves making kids smile.",
+        },
+      ],
+      hours: [
+        { day: "mon", closed: false, open: "08:00", close: "17:00" },
+        { day: "tue", closed: false, open: "08:00", close: "17:00" },
+        { day: "wed", closed: false, open: "08:00", close: "17:00" },
+        { day: "thu", closed: false, open: "08:00", close: "17:00" },
+        { day: "fri", closed: false, open: "08:00", close: "16:00" },
+        { day: "sat", closed: true },
+        { day: "sun", closed: true },
+      ],
+      social: {
+        website: "https://happysmiles.example",
+        facebook: "https://www.facebook.com/happysmiles",
+      },
+      status: "draft",
+    })
+    .onConflictDoNothing({ target: clinics.slug })
+    .returning({ id: clinics.id, slug: clinics.slug });
+
+  if (pedClinic) {
+    console.log(
+      `Inserted pediatric fixture clinic ${pedClinic.slug} (${pedClinic.id}). Preview at /sites/${pedClinic.slug}`,
+    );
+  } else {
+    console.log("Pediatric fixture clinic already seeded; skipped.");
+  }
+
   await client.end({ timeout: 5 });
 }
 

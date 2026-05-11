@@ -110,7 +110,7 @@ export function OnboardForm() {
   const [stateCode, setStateCode] = useState("AR");
   const [postalCode, setPostalCode] = useState("");
 
-  const [template, setTemplate] = useState<"warm" | "modern" | "ortho">("warm");
+  const [template, setTemplate] = useState<"warm" | "modern" | "ortho" | "pediatric">("warm");
   const [primaryColor, setPrimaryColor] = useState("#0a3d2e");
   const [accentColor, setAccentColor] = useState("#d8ebe2");
   const [logoUrl, setLogoUrl] = useState("");
@@ -720,8 +720,8 @@ export function OnboardForm() {
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted mb-3">
             Template style
           </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {(["warm", "modern", "ortho"] as const).map((t) => (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {(["warm", "modern", "ortho", "pediatric"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -738,7 +738,9 @@ export function OnboardForm() {
                     ? "Traditional serif typography, warm earthy tones."
                     : t === "modern"
                       ? "Clean sans-serif, minimal layout, high contrast."
-                      : "Orthodontics-focused layout — braces, Invisalign, before/after gallery."}
+                      : t === "ortho"
+                        ? "Orthodontics-focused layout — braces, Invisalign, before/after gallery."
+                        : "Pediatric-friendly design — bright, playful, parent-facing."}
                 </p>
               </button>
             ))}
