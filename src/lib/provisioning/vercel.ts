@@ -69,21 +69,28 @@ export async function addVercelEnvVars(
   projectId: string,
   clinicSlug: string,
 ): Promise<void> {
+  const all = ["production", "preview", "development"];
   const envVars: Array<{ key: string; value: string; type: string; target: string[] }> = [
-    {
-      key: "CLINIC_SLUG",
-      value: clinicSlug,
-      type: "plain",
-      target: ["production", "preview", "development"],
-    },
+    { key: "CLINIC_SLUG", value: clinicSlug, type: "plain", target: all },
+    { key: "NEXT_PUBLIC_CLINIC_SLUG", value: clinicSlug, type: "plain", target: all },
   ];
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl) {
+    envVars.push({ key: "DATABASE_URL", value: databaseUrl, type: "encrypted", target: all });
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (appUrl) {
+    envVars.push({ key: "NEXT_PUBLIC_APP_URL", value: appUrl, type: "plain", target: all });
+  }
 
   // Propagate Sentry DSN from platform to clinic Vercel project
   const sentryDsn = process.env.SENTRY_DSN;
   if (sentryDsn) {
     envVars.push(
-      { key: "SENTRY_DSN", value: sentryDsn, type: "plain", target: ["production", "preview", "development"] },
-      { key: "NEXT_PUBLIC_SENTRY_DSN", value: sentryDsn, type: "plain", target: ["production", "preview", "development"] },
+      { key: "SENTRY_DSN", value: sentryDsn, type: "plain", target: all },
+      { key: "NEXT_PUBLIC_SENTRY_DSN", value: sentryDsn, type: "plain", target: all },
     );
   }
 

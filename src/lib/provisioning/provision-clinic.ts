@@ -4,17 +4,10 @@ import { getDb, schema } from "@/src/db/client";
 import { registerUptimeMonitor, removeUptimeMonitor } from "@/src/lib/uptime";
 import { sendProvisioningFailure, sendProvisioningSuccess } from "@/src/lib/slack";
 
-import { deleteRepo, getRepoId } from "./github";
+import { deleteRepo } from "./github";
 import { githubProvisionStep } from "./github-step";
-import {
-  addSubdomain,
-  addVercelEnvVars,
-  createVercelProject,
-  deleteVercelProject,
-  disableDeploymentProtection,
-  triggerDeploy,
-  waitForDeployment,
-} from "./vercel";
+import { deleteVercelProject } from "./vercel";
+import { vercelProvisionStep } from "./vercel-step";
 
 type ProvisioningStep = (typeof schema.provisioningStep.enumValues)[number];
 
@@ -85,35 +78,10 @@ export async function provisionClinic(clinicId: string): Promise<void> {
     if (!vercelProjectId) {
       lastStep = "vercel_create";
       await logStep(clinicId, "vercel_create", async () => {
-        const owner =
-          process.env.GITHUB_TEMPLATE_OWNER ?? "DreamCreateWeb";
-        const repoFullName = `${owner}/dreamcreate-${clinic.slug}`;
-        const result = await createVercelProject(clinic.slug, repoFullName);
+        const result = await vercelProvisionStep(clinicId);
         vercelProjectId = result.projectId;
-        await addVercelEnvVars(vercelProjectId, clinic.slug);
-        await disableDeploymentProtection(vercelProjectId);
-        await db
-          .update(schema.clinics)
-          .set({ vercelProjectId })
-          .where(eq(schema.clinics.id, clinicId));
       });
       vercelCreated = true;
-
-      lastStep = "deploy";
-      await logStep(clinicId, "deploy", async () => {
-        // vercelProjectId is guaranteed set by the preceding vercel_create step
-        const pid = vercelProjectId!;
-        const repoId = await getRepoId(clinic.slug);
-        const { deploymentUrl, deploymentId } = await triggerDeploy(pid, repoId);
-        await waitForDeployment(deploymentId).catch((e) => {
-          console.warn("[provision] deployment wait timed out (non-fatal)", e);
-        });
-        await db
-          .update(schema.clinics)
-          .set({ vercelDeploymentUrl: deploymentUrl })
-          .where(eq(schema.clinics.id, clinicId));
-        await addSubdomain(pid, clinic.slug);
-      });
 
       // Uptime monitoring — soft-fail so a missing token doesn't block provisioning
       const domain = `clinic-${clinic.slug}.dreamcreate.web`;
@@ -130,12 +98,12 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       }
     }
 
-    await db
-      .update(schema.clinics)
-      .set({ status: "live" })
-      .where(eq(schema.clinics.id, clinicId));
-
-    const deploymentUrl = clinic.vercelDeploymentUrl || `https://clinic-${clinic.slug}.dreamcreate.web`;
+    const updatedClinic = await db.query.clinics.findFirst({
+      where: eq(schema.clinics.id, clinicId),
+    });
+    const deploymentUrl =
+      updatedClinic?.vercelDeploymentUrl ||
+      `https://clinic-${clinic.slug}.dreamcreate.web`;
     await sendProvisioningSuccess(clinic.name, clinic.slug, deploymentUrl);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
