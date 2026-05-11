@@ -1,7 +1,20 @@
 import type { NextRequest } from "next/server";
 import { sendSlackDm } from "@/src/lib/slack";
+import { getDb } from "@/src/db/client";
+import { clinics } from "@/src/db/schema";
+import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
+
+interface FailureState {
+  count: number;
+  firstFailAt: Date;
+  lastAlertAt: Date | null;
+  lastSuccessAt: Date | null;
+}
+
+// Module-level state: track failure counts per URL (best-effort; resets on serverless warm reboot)
+const failureMap = new Map<string, FailureState>();
 
 // BetterStack (and most uptime providers) POST JSON on downtime/recovery events.
 // Authenticate via ?secret=<UPTIME_WEBHOOK_SECRET> in the webhook URL.
@@ -26,15 +39,77 @@ export async function POST(req: NextRequest) {
   const isDown = extractIsDown(body);
   const cause = extractCause(body);
 
-  const emoji = isDown ? ":red_circle:" : ":large_green_circle:";
-  const state = isDown ? "DOWN" : "UP";
-  const siteLabel = monitorUrl ?? "unknown site";
+  if (!monitorUrl) {
+    return Response.json({ ok: true });
+  }
 
-  const text = `${emoji} *[Uptime Alert]* ${siteLabel} is *${state}*${cause ? ` — ${cause}` : ""}\n_${new Date().toISOString()}_`;
+  const now = new Date();
+  const state = failureMap.get(monitorUrl) ?? {
+    count: 0,
+    firstFailAt: now,
+    lastAlertAt: null,
+    lastSuccessAt: null,
+  };
 
-  await sendSlackDm(text);
+  if (isDown) {
+    // Down event: increment failure count
+    state.count++;
+    state.firstFailAt = state.count === 1 ? now : state.firstFailAt;
+
+    // Check if we should send an alert:
+    // - Count reached 2 (consecutive failures)
+    // - No recent alert (dedup window: 10 min)
+    const shouldAlert =
+      state.count >= 2 && (!state.lastAlertAt || now.getTime() - state.lastAlertAt.getTime() > 10 * 60 * 1000);
+
+    if (shouldAlert) {
+      const clinicName = await getClinicNameFromUrl(monitorUrl);
+      const lastSuccess = state.lastSuccessAt?.toISOString() ?? "N/A";
+      const text =
+        `:red_circle: *[Clinic Down]* ${clinicName || monitorUrl}\n` +
+        `URL: ${monitorUrl}\n` +
+        `Last success: ${lastSuccess}\n` +
+        `Error: ${cause || "Unknown"}\n` +
+        `_Consecutive failures: ${state.count}_`;
+      await sendSlackDm(text);
+      state.lastAlertAt = now;
+    }
+
+    failureMap.set(monitorUrl, state);
+  } else {
+    // Recovery event: reset count and send recovery alert if we previously alerted
+    const wasDown = state.count > 0;
+    state.count = 0;
+    state.lastSuccessAt = now;
+
+    if (wasDown && state.lastAlertAt) {
+      const clinicName = await getClinicNameFromUrl(monitorUrl);
+      const text =
+        `:large_green_circle: *[Clinic Recovered]* ${clinicName || monitorUrl} is back up.\n` +
+        `_${now.toISOString()}_`;
+      await sendSlackDm(text);
+    }
+
+    failureMap.set(monitorUrl, state);
+  }
 
   return Response.json({ ok: true });
+}
+
+async function getClinicNameFromUrl(url: string): Promise<string | null> {
+  try {
+    // Extract slug from URL: https://slug.dreamcreate.web or similar
+    const match = url.match(/\/\/([a-z0-9-]+)\.dreamcreate\.web/i) || url.match(/\/\/([a-z0-9-]+)\./i);
+    if (!match?.[1]) return null;
+
+    const slug = match[1];
+    const db = getDb();
+    const [clinic] = await db.select({ name: clinics.name }).from(clinics).where(eq(clinics.slug, slug)).limit(1);
+    return clinic?.name ?? null;
+  } catch (err) {
+    console.error("[uptime-webhook] Failed to lookup clinic name:", err);
+    return null;
+  }
 }
 
 function extractMonitorUrl(body: Record<string, unknown>): string | null {
