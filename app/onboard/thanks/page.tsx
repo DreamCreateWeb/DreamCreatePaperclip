@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-type SearchParams = Promise<{ slug?: string }>;
+import { PayButton } from "@/app/onboard/pay-button/pay-button";
+
+type SearchParams = Promise<{ slug?: string; clinicId?: string }>;
 
 export const metadata = {
   title: "We've got it · Dream Create",
@@ -14,7 +16,7 @@ export default async function OnboardThanksPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { slug } = await searchParams;
+  const { slug, clinicId } = await searchParams;
   const subdomainPreview = slug && slug !== "queued" ? slug : "your-clinic";
 
   return (
@@ -26,9 +28,8 @@ export default async function OnboardThanksPage({
         We&rsquo;ve got it.
       </h1>
       <p className="mt-6 text-lg leading-relaxed text-ink-muted">
-        Thanks for sharing your clinic details. Our team will review and follow
-        up within one business day. To lock in your spot in the build queue,
-        continue to payment.
+        Thanks for sharing your clinic details. To lock in your spot in the
+        build queue, continue to payment now.
       </p>
 
       <div className="mt-10 rounded-[var(--radius-card)] border border-rule bg-white p-6">
@@ -40,13 +41,14 @@ export default async function OnboardThanksPage({
         </p>
       </div>
 
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-        <span
-          className="rounded-pill bg-accent px-6 py-3 text-center text-sm font-medium text-white shadow-sm opacity-90"
-          aria-disabled="true"
-        >
-          Continue to payment (coming soon)
-        </span>
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+        {clinicId ? (
+          <PayButton clinicId={clinicId} />
+        ) : (
+          <span className="rounded-pill bg-accent/60 px-6 py-3 text-center text-sm font-medium text-white cursor-not-allowed">
+            Continue to payment
+          </span>
+        )}
         <Link
           href="/"
           className="rounded-pill border border-rule bg-white px-6 py-3 text-center text-sm font-medium text-ink transition hover:border-ink/40"
@@ -56,8 +58,7 @@ export default async function OnboardThanksPage({
       </div>
 
       <p className="mt-6 text-xs text-ink-muted">
-        Payment isn&rsquo;t live yet — we&rsquo;ll email you a secure Stripe
-        link as soon as your draft is reviewed.
+        Flat $200/month — no setup fees, cancel any time.
       </p>
     </main>
   );

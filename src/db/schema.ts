@@ -180,6 +180,7 @@ export const clinics = pgTable(
     status: clinicStatus("status").notNull().default("draft"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     repoUrl: text("repo_url"),
     vercelProjectId: text("vercel_project_id"),
     vercelDeploymentUrl: text("vercel_deployment_url"),

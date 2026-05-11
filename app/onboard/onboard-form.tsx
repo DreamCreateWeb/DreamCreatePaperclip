@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 
@@ -10,6 +10,7 @@ import {
   type DayOfWeek,
   type OnboardingInput,
 } from "@/src/lib/onboarding/schema";
+import { onboardingSchema } from "@/src/lib/onboarding/schema";
 
 type FieldErrors = Record<string, string[]>;
 
@@ -88,11 +89,16 @@ function FieldShell({
 const inputClass =
   "rounded-card border border-rule bg-white px-4 py-3 text-base text-ink shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent-soft placeholder:text-ink-muted/60";
 
+const STORAGE_KEY = "onboard_form_state";
+const TOTAL_STEPS = 3;
+
 export function OnboardForm() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [topError, setTopError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -127,6 +133,89 @@ export function OnboardForm() {
   const [google, setGoogle] = useState("");
 
   const [nickname, setNickname] = useState(""); // honeypot
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setName(state.name || "");
+        setSlug(state.slug || "");
+        setContactName(state.contactName || "");
+        setContactEmail(state.contactEmail || "");
+        setContactPhone(state.contactPhone || "");
+        setLine1(state.line1 || "");
+        setLine2(state.line2 || "");
+        setCity(state.city || "");
+        setStateCode(state.stateCode || "AR");
+        setPostalCode(state.postalCode || "");
+        setPrimaryColor(state.primaryColor || "#0a3d2e");
+        setAccentColor(state.accentColor || "#d8ebe2");
+        setLogoUrl(state.logoUrl || "");
+        setSelectedCatalog(new Set(state.selectedCatalog || ["General dentistry"]));
+        setExtraServices(state.extraServices || []);
+        setTeam(state.team || [{ name: "", role: "", bio: "", photoUrl: "" }]);
+        setHours(state.hours || DEFAULT_HOURS);
+        setWebsite(state.website || "");
+        setFacebook(state.facebook || "");
+        setInstagram(state.instagram || "");
+        setGoogle(state.google || "");
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, []);
+
+  // Autosave to localStorage
+  useEffect(() => {
+    const state = {
+      name,
+      slug,
+      contactName,
+      contactEmail,
+      contactPhone,
+      line1,
+      line2,
+      city,
+      stateCode,
+      postalCode,
+      primaryColor,
+      accentColor,
+      logoUrl,
+      selectedCatalog: Array.from(selectedCatalog),
+      extraServices,
+      team,
+      hours,
+      website,
+      facebook,
+      instagram,
+      google,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [
+    name,
+    slug,
+    contactName,
+    contactEmail,
+    contactPhone,
+    line1,
+    line2,
+    city,
+    stateCode,
+    postalCode,
+    primaryColor,
+    accentColor,
+    logoUrl,
+    selectedCatalog,
+    extraServices,
+    team,
+    hours,
+    website,
+    facebook,
+    instagram,
+    google,
+  ]);
 
   const slugPlaceholder = useMemo(() => {
     if (!name.trim()) return "auto-generated from clinic name";
@@ -180,6 +269,25 @@ export function OnboardForm() {
     );
   }
 
+  function validateField(fieldName: string, value: unknown) {
+    const tempPayload = buildPayload();
+    const result = onboardingSchema.safeParse(tempPayload);
+
+    if (!result.success) {
+      const fieldErrs = result.error.flatten().fieldErrors;
+      const errs = Object.entries(fieldErrs).reduce(
+        (acc, [key, msgs]) => {
+          acc[key] = msgs as string[];
+          return acc;
+        },
+        {} as FieldErrors,
+      );
+      setFieldErrors(errs);
+    } else {
+      setFieldErrors({});
+    }
+  }
+
   function buildPayload(): OnboardingInput {
     const services: ServiceRow[] = [
       ...Array.from(selectedCatalog).map((s) => ({ name: s, description: "" })),
@@ -227,6 +335,13 @@ export function OnboardForm() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (submitting) return;
+
+    // Move to next step if not on last step
+    if (currentStep < TOTAL_STEPS) {
+      setCurrentStep(currentStep + 1);
+      return;
+    }
+
     setTopError(null);
     setErrors({});
     setSubmitting(true);
@@ -239,9 +354,12 @@ export function OnboardForm() {
       });
 
       if (res.ok) {
-        const json = (await res.json()) as { slug?: string };
+        localStorage.removeItem(STORAGE_KEY);
+        const json = (await res.json()) as { slug?: string; clinicId?: string };
         const targetSlug = json.slug ?? "queued";
-        const next = `/onboard/thanks?slug=${encodeURIComponent(targetSlug)}` as Route;
+        const params = new URLSearchParams({ slug: targetSlug });
+        if (json.clinicId) params.set("clinicId", json.clinicId);
+        const next = `/onboard/thanks?${params.toString()}` as Route;
         router.push(next);
         return;
       }
@@ -301,6 +419,23 @@ export function OnboardForm() {
         />
       </div>
 
+      {/* Step indicator */}
+      <div className="flex items-center justify-between border-b border-rule pb-4">
+        <p className="text-sm font-medium text-ink-muted">
+          Step {currentStep} of {TOTAL_STEPS}
+        </p>
+        <div className="flex gap-1">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-1 w-6 rounded-full transition ${
+                i < currentStep ? "bg-accent" : "bg-rule"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
       {topError ? (
         <div
           role="alert"
@@ -310,7 +445,9 @@ export function OnboardForm() {
         </div>
       ) : null}
 
-      <Section
+      {currentStep === 1 && (
+        <>
+          <Section
         index={1}
         title="Your clinic"
         description="The basics — what your patients call you, and where to reach you."
@@ -508,7 +645,11 @@ export function OnboardForm() {
           </div>
         </div>
       </Section>
+        </>
+      )}
 
+      {currentStep === 2 && (
+        <>
       <Section
         index={3}
         title="Brand"
@@ -646,7 +787,11 @@ export function OnboardForm() {
           ))}
         </div>
       </Section>
+        </>
+      )}
 
+      {currentStep === 3 && (
+        <>
       <Section
         index={5}
         title="Team"
@@ -874,19 +1019,38 @@ export function OnboardForm() {
           </FieldShell>
         </div>
       </Section>
+        </>
+      )}
 
       <div className="sticky bottom-0 -mx-6 border-t border-rule bg-canvas/90 px-6 py-5 backdrop-blur sm:mx-0 sm:rounded-card sm:border sm:px-6">
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-ink-muted">
-            We&rsquo;ll review and follow up within one business day.
+            {currentStep === TOTAL_STEPS
+              ? "We'll review and follow up within ~24 hours."
+              : `Step ${currentStep} of ${TOTAL_STEPS}`}
           </p>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-pill bg-accent px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-ink disabled:opacity-60"
-          >
-            {submitting ? "Submitting…" : "Submit clinic profile"}
-          </button>
+          <div className="flex gap-3">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={() => setCurrentStep(currentStep - 1)}
+                className="rounded-pill border border-rule bg-white px-6 py-3 text-sm font-medium text-ink shadow-sm transition hover:border-ink/40"
+              >
+                Back
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-pill bg-accent px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-ink disabled:opacity-60"
+            >
+              {submitting
+                ? "Submitting…"
+                : currentStep === TOTAL_STEPS
+                  ? "Submit clinic profile"
+                  : `Next`}
+            </button>
+          </div>
         </div>
       </div>
     </form>
