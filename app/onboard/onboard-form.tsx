@@ -316,13 +316,79 @@ export function OnboardForm() {
     };
   }
 
+  function validateStep(step: number): FieldErrors {
+    const errs: FieldErrors = {};
+
+    if (step === 1) {
+      if (!name.trim()) errs.name = ["Clinic name is required"];
+      if (!contactName.trim()) errs.contactName = ["Primary contact is required"];
+      if (!contactEmail.trim()) errs.contactEmail = ["Email is required"];
+      if (!contactPhone.trim()) errs.contactPhone = ["Phone is required"];
+      if (!line1.trim()) errs["address.line1"] = ["Street address is required"];
+      if (!city.trim()) errs["address.city"] = ["City is required"];
+      if (!stateCode.trim()) errs["address.state"] = ["State is required"];
+      if (!postalCode.trim()) errs["address.postalCode"] = ["ZIP is required"];
+    } else if (step === 2) {
+      if (selectedCatalog.size === 0 && extraServices.length === 0) {
+        errs.services = ["Please select or add at least one service"];
+      }
+    }
+
+    return errs;
+  }
+
+  function getStepForField(fieldKey: string): number {
+    if (
+      fieldKey === "name" ||
+      fieldKey === "slug" ||
+      fieldKey === "contactName" ||
+      fieldKey === "contactEmail" ||
+      fieldKey === "contactPhone" ||
+      fieldKey.startsWith("address.")
+    ) {
+      return 1;
+    }
+    if (
+      fieldKey.startsWith("brand.") ||
+      fieldKey === "services"
+    ) {
+      return 2;
+    }
+    return 3;
+  }
+
+  function getMinStepWithErrors(errs: FieldErrors): number {
+    const steps = Object.keys(errs).map((key) => getStepForField(key));
+    return steps.length > 0 ? Math.min(...steps) : 1;
+  }
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (submitting) return;
 
     // Move to next step if not on last step
     if (currentStep < TOTAL_STEPS) {
+      const stepErrs = validateStep(currentStep);
+      if (Object.keys(stepErrs).length > 0) {
+        setErrors(stepErrs);
+        setTopError("Please fix the highlighted fields below.");
+        const firstKey = Object.keys(stepErrs)[0];
+        if (firstKey) {
+          const el = document.querySelector(
+            `[data-field="${CSS.escape(firstKey)}"]`,
+          );
+          if (el && "scrollIntoView" in el) {
+            (el as HTMLElement).scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }
+        return;
+      }
       setCurrentStep(currentStep + 1);
+      setErrors({});
+      setTopError(null);
       return;
     }
 
@@ -360,6 +426,10 @@ export function OnboardForm() {
         const fe = json.fieldErrors ?? {};
         setErrors(fe);
         setTopError("Please fix the highlighted fields below.");
+        const minStep = getMinStepWithErrors(fe);
+        if (minStep !== currentStep) {
+          setCurrentStep(minStep);
+        }
         const firstKey = Object.keys(fe)[0];
         if (firstKey) {
           const el = document.querySelector(
