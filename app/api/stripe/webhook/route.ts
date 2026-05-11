@@ -4,6 +4,10 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/src/db/client";
 import { clinics, provisioningRuns } from "@/src/db/schema";
 import { getStripe } from "@/src/lib/stripe/client";
+import {
+  pauseUptimeMonitor,
+  resumeUptimeMonitor,
+} from "@/src/lib/uptime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -116,15 +120,22 @@ export async function POST(req: Request) {
             .limit(1);
 
           const clinic = clinicResult[0];
-          if (clinic && clinic.status === "pending_payment") {
-            // Update clinic to provisioning
-            await db
-              .update(clinics)
-              .set({ status: "provisioning", updatedAt: new Date() })
-              .where(eq(clinics.id, clinic.id));
-
-            // Trigger provisioning
-            await triggerProvisioning(clinic.id);
+          if (clinic) {
+            if (clinic.status === "pending_payment") {
+              await db
+                .update(clinics)
+                .set({ status: "provisioning", updatedAt: new Date() })
+                .where(eq(clinics.id, clinic.id));
+              await triggerProvisioning(clinic.id);
+            } else if (
+              (clinic.status === "paused" || clinic.status === "past_due") &&
+              clinic.uptimeMonitorId
+            ) {
+              // Payment recovered — resume uptime checks
+              await resumeUptimeMonitor(clinic.uptimeMonitorId).catch((e) =>
+                console.error("[stripe/webhook] resumeMonitor failed", e),
+              );
+            }
           }
         }
         break;
@@ -138,12 +149,19 @@ export async function POST(req: Request) {
             : invoice.customer?.id;
 
         if (customerId) {
-          await db
+          const affected = await db
             .update(clinics)
             .set({ status: "paused", updatedAt: new Date() })
-            .where(eq(clinics.stripeCustomerId, customerId));
+            .where(eq(clinics.stripeCustomerId, customerId))
+            .returning({ uptimeMonitorId: clinics.uptimeMonitorId });
 
-          // TODO: Alert ops via Google Chat webhook
+          const monitorId = affected[0]?.uptimeMonitorId;
+          if (monitorId) {
+            await pauseUptimeMonitor(monitorId).catch((e) =>
+              console.error("[stripe/webhook] pauseMonitor failed", e),
+            );
+          }
+
           console.log(
             `[stripe/webhook] payment failed for customer ${customerId}`,
           );
@@ -153,10 +171,18 @@ export async function POST(req: Request) {
 
       case "customer.subscription.deleted": {
         const sub = event.data.object;
-        await db
+        const affected = await db
           .update(clinics)
           .set({ status: "cancelled", updatedAt: new Date() })
-          .where(eq(clinics.stripeSubscriptionId, sub.id));
+          .where(eq(clinics.stripeSubscriptionId, sub.id))
+          .returning({ uptimeMonitorId: clinics.uptimeMonitorId });
+
+        const monitorId = affected[0]?.uptimeMonitorId;
+        if (monitorId) {
+          await pauseUptimeMonitor(monitorId).catch((e) =>
+            console.error("[stripe/webhook] pauseMonitor(cancelled) failed", e),
+          );
+        }
         break;
       }
     }

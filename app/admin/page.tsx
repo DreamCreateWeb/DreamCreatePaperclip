@@ -100,6 +100,21 @@ export default async function AdminHomePage() {
               </span>
             </Link>
           </li>
+          <li>
+            <Link
+              href="/admin/uptime"
+              className="group block rounded-card border border-rule bg-white px-5 py-4 transition hover:border-ink"
+            >
+              <span className="font-medium">Uptime monitor</span>
+              <span className="block text-ink-muted">
+                BetterStack availability per clinic — 60 s checks, auto-pause on
+                cancellation.
+              </span>
+              <span className="mt-2 block text-xs font-medium uppercase tracking-[0.16em] text-accent group-hover:underline">
+                Open →
+              </span>
+            </Link>
+          </li>
         </ul>
       </section>
 
