@@ -65,6 +65,7 @@ export function BeforeAfterGallery({ pairs, heading, intro }: Props) {
           <div className="flex items-center gap-2 border-t border-rule p-4">
             <button
               onClick={() => setView("before")}
+              aria-pressed={view === "before"}
               className={`flex-1 rounded-pill py-2 text-sm font-medium transition ${
                 view === "before"
                   ? "bg-ink text-white"
@@ -75,6 +76,7 @@ export function BeforeAfterGallery({ pairs, heading, intro }: Props) {
             </button>
             <button
               onClick={() => setView("after")}
+              aria-pressed={view === "after"}
               className={`flex-1 rounded-pill py-2 text-sm font-medium transition ${
                 view === "after"
                   ? "text-white"
@@ -94,7 +96,7 @@ export function BeforeAfterGallery({ pairs, heading, intro }: Props) {
               <li key={idx}>
                 <button
                   onClick={() => { setActive(idx); setView("after"); }}
-                  className={`block w-20 overflow-hidden rounded-card border-2 transition ${
+                  className={`block w-20 overflow-hidden rounded-card border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--clinic-primary)] focus-visible:ring-offset-2 ${
                     idx === active ? "border-accent" : "border-rule hover:border-ink/30"
                   }`}
                   aria-label={pair.label}
