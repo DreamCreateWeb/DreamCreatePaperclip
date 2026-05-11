@@ -67,7 +67,7 @@ export const addressSchema = z.object({
     .regex(ZIP_PATTERN, "Enter a valid US ZIP code"),
 });
 
-export const CLINIC_TEMPLATES = ["warm", "modern"] as const;
+export const CLINIC_TEMPLATES = ["warm", "modern", "ortho"] as const;
 export type ClinicTemplate = (typeof CLINIC_TEMPLATES)[number];
 
 export const beforeAfterPairSchema = z.object({

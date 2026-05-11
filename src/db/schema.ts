@@ -88,7 +88,7 @@ export type ClinicAddress = {
   postalCode: string;
 };
 
-export type ClinicTemplate = "warm" | "modern";
+export type ClinicTemplate = "warm" | "modern" | "ortho";
 
 export type ClinicBrand = {
   logoUrl?: string;

@@ -5,6 +5,7 @@ import { BeforeAfterGallery } from "@/src/components/clinic/before-after-gallery
 import { ClinicHeader } from "@/src/components/clinic/header";
 import { ClinicHero } from "@/src/components/clinic/hero";
 import { ClinicHeroModern } from "@/src/components/clinic/hero-modern";
+import { ClinicHeroOrtho } from "@/src/components/clinic/hero-ortho";
 import { CtaBand } from "@/src/components/clinic/cta-band";
 import { HoursLocationCard } from "@/src/components/clinic/hours-card";
 import { InsuranceCarousel } from "@/src/components/clinic/insurance-carousel";
@@ -13,6 +14,7 @@ import { ServicesGrid } from "@/src/components/clinic/services-grid";
 import { StickyCtaBar } from "@/src/components/clinic/sticky-bar";
 import { TeamGrid } from "@/src/components/clinic/team-grid";
 import { Testimonials } from "@/src/components/clinic/testimonials";
+import { TreatmentCards } from "@/src/components/clinic/treatment-cards";
 import { resolveBrand } from "@/src/lib/clinic/brand";
 import { getClinicBySlug } from "@/src/lib/clinic/get-clinic";
 import { aggregateRatingJsonLd, localBusinessJsonLd } from "@/src/lib/clinic/jsonld";
@@ -69,6 +71,7 @@ export default async function ClinicHomePage({
   const siteUrl = clinicCanonical(clinic.slug);
   const brand = resolveBrand(clinic.brand);
   const isModern = brand.template === "modern";
+  const isOrtho = brand.template === "ortho";
 
   const [published, stats] = await Promise.all([
     listPublishedReviews(clinic.id),
@@ -85,31 +88,50 @@ export default async function ClinicHomePage({
     <>
       <ClinicHeader clinic={clinic} basePath={basePath} current="home" />
       <main>
-        {isModern ? (
+        {isOrtho ? (
+          <ClinicHeroOrtho clinic={clinic} basePath={basePath} />
+        ) : isModern ? (
           <ClinicHeroModern clinic={clinic} basePath={basePath} />
         ) : (
           <ClinicHero clinic={clinic} basePath={basePath} />
         )}
 
-        <ServicesGrid
-          services={clinic.services.slice(0, 6)}
-          heading="Care for every smile"
-          intro="A focused set of services so we can do each one beautifully."
-        />
+        {isOrtho ? (
+          <>
+            {/* Ortho: before/after gallery leads (transformations are the selling point) */}
+            <BeforeAfterGallery
+              pairs={clinic.beforeAfterPairs ?? []}
+              heading="Smile transformations"
+              intro="Real orthodontic results from our patients."
+            />
+            <TreatmentCards
+              services={clinic.services.slice(0, 6)}
+              heading="Orthodontic treatments"
+              intro="Every smile is different. We offer options that fit your teeth, your timeline, and your budget."
+            />
+          </>
+        ) : (
+          <>
+            <ServicesGrid
+              services={clinic.services.slice(0, 6)}
+              heading="Care for every smile"
+              intro="A focused set of services so we can do each one beautifully."
+            />
+            <BeforeAfterGallery
+              pairs={clinic.beforeAfterPairs ?? []}
+              heading="Results you can see"
+              intro="Real patients, real transformations."
+            />
+          </>
+        )}
 
         <InsuranceCarousel
           providers={DEFAULT_INSURERS}
           heading="We accept most major insurance plans"
         />
 
-        <BeforeAfterGallery
-          pairs={clinic.beforeAfterPairs ?? []}
-          heading="Results you can see"
-          intro="Real patients, real transformations."
-        />
-
-        {/* Modern variant places CTA before team/reviews */}
-        {isModern && <CtaBand clinic={clinic} basePath={basePath} />}
+        {/* Modern and ortho variants place CTA before team/reviews */}
+        {(isModern || isOrtho) && <CtaBand clinic={clinic} basePath={basePath} />}
 
         <TeamGrid
           team={clinic.team.slice(0, 3)}
@@ -132,7 +154,7 @@ export default async function ClinicHomePage({
         <HoursLocationCard clinic={clinic} basePath={basePath} />
 
         {/* Warm variant places CTA at the bottom */}
-        {!isModern && <CtaBand clinic={clinic} basePath={basePath} />}
+        {!isModern && !isOrtho && <CtaBand clinic={clinic} basePath={basePath} />}
       </main>
 
       <StickyCtaBar clinic={clinic} basePath={basePath} />

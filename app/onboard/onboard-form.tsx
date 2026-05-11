@@ -110,7 +110,7 @@ export function OnboardForm() {
   const [stateCode, setStateCode] = useState("AR");
   const [postalCode, setPostalCode] = useState("");
 
-  const [template, setTemplate] = useState<"warm" | "modern">("warm");
+  const [template, setTemplate] = useState<"warm" | "modern" | "ortho">("warm");
   const [primaryColor, setPrimaryColor] = useState("#0a3d2e");
   const [accentColor, setAccentColor] = useState("#d8ebe2");
   const [logoUrl, setLogoUrl] = useState("");
@@ -720,8 +720,8 @@ export function OnboardForm() {
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted mb-3">
             Template style
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(["warm", "modern"] as const).map((t) => (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(["warm", "modern", "ortho"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -736,7 +736,9 @@ export function OnboardForm() {
                 <p className="mt-1 text-xs text-ink-muted">
                   {t === "warm"
                     ? "Traditional serif typography, warm earthy tones."
-                    : "Clean sans-serif, minimal layout, high contrast."}
+                    : t === "modern"
+                      ? "Clean sans-serif, minimal layout, high contrast."
+                      : "Orthodontics-focused layout — braces, Invisalign, before/after gallery."}
                 </p>
               </button>
             ))}

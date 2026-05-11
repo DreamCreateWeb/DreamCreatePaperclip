@@ -141,6 +141,95 @@ async function main() {
     }
   }
 
+  // Orthodontics fixture clinic — preview for template-ortho
+  const [orthoClinic] = await db
+    .insert(clinics)
+    .values({
+      slug: "straight-smiles-fayetteville",
+      name: "Straight Smiles Orthodontics",
+      contactEmail: "hello@straightsmiles.example",
+      contactPhone: "(479) 555-0199",
+      address: {
+        line1: "3400 N College Ave",
+        city: "Fayetteville",
+        state: "AR",
+        postalCode: "72703",
+      },
+      brand: {
+        primaryColor: "#0d4a8a",
+        accentColor: "#d6eaff",
+        template: "ortho",
+      },
+      services: [
+        {
+          name: "Invisalign",
+          description:
+            "Custom clear aligners that straighten teeth discreetly — removable for eating, sports, and photos.",
+        },
+        {
+          name: "Traditional Braces",
+          description:
+            "Metal brackets and wires offer the most precise control for complex corrections. Reliable and affordable.",
+        },
+        {
+          name: "Clear Braces",
+          description:
+            "Ceramic brackets that match your tooth color for a subtler look, with the same correction power as metal.",
+        },
+        {
+          name: "Retainers",
+          description:
+            "Custom-fitted retainers keep your smile in place after treatment.",
+        },
+        {
+          name: "Early Orthodontics",
+          description:
+            "Phase-1 treatment for children ages 7–10 that guides jaw development before all permanent teeth arrive.",
+        },
+        {
+          name: "Teen Packages",
+          description:
+            "Flexible plans designed around school schedules, sports seasons, and social confidence.",
+        },
+      ],
+      team: [
+        {
+          name: "Dr. Sarah Chen",
+          role: "Lead Orthodontist",
+          bio: "DDS, MS Orthodontics, University of Arkansas. Board-certified with 10+ years helping Northwest Arkansas smile.",
+        },
+        {
+          name: "Dr. Marcus Webb",
+          role: "Associate Orthodontist",
+          bio: "DDS, specializing in Invisalign and complex bite correction.",
+        },
+      ],
+      hours: [
+        { day: "mon", closed: false, open: "08:00", close: "17:00" },
+        { day: "tue", closed: false, open: "08:00", close: "17:00" },
+        { day: "wed", closed: false, open: "08:00", close: "17:00" },
+        { day: "thu", closed: false, open: "08:00", close: "17:00" },
+        { day: "fri", closed: false, open: "08:00", close: "14:00" },
+        { day: "sat", closed: true },
+        { day: "sun", closed: true },
+      ],
+      social: {
+        website: "https://straightsmiles.example",
+        facebook: "https://www.facebook.com/straightsmiles",
+      },
+      status: "draft",
+    })
+    .onConflictDoNothing({ target: clinics.slug })
+    .returning({ id: clinics.id, slug: clinics.slug });
+
+  if (orthoClinic) {
+    console.log(
+      `Inserted ortho fixture clinic ${orthoClinic.slug} (${orthoClinic.id}). Preview at /sites/${orthoClinic.slug}`,
+    );
+  } else {
+    console.log("Ortho fixture clinic already seeded; skipped.");
+  }
+
   await client.end({ timeout: 5 });
 }
 

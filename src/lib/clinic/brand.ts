@@ -5,6 +5,8 @@ const WARM_PRIMARY = "#0a3d2e";
 const WARM_ACCENT = "#d8ebe2";
 const MODERN_PRIMARY = "#1a1a2e";
 const MODERN_ACCENT = "#e8e8f8";
+const ORTHO_PRIMARY = "#0d4a8a";
+const ORTHO_ACCENT = "#d6eaff";
 
 export type ResolvedBrand = {
   primary: string;
@@ -52,8 +54,18 @@ function softTint(hex: string, mix = 0.88): string {
 
 export function resolveBrand(brand: ClinicBrand | null | undefined): ResolvedBrand {
   const template: ClinicTemplate = brand?.template ?? "warm";
-  const fallbackPrimary = template === "modern" ? MODERN_PRIMARY : WARM_PRIMARY;
-  const fallbackAccent = template === "modern" ? MODERN_ACCENT : WARM_ACCENT;
+  const fallbackPrimary =
+    template === "modern"
+      ? MODERN_PRIMARY
+      : template === "ortho"
+        ? ORTHO_PRIMARY
+        : WARM_PRIMARY;
+  const fallbackAccent =
+    template === "modern"
+      ? MODERN_ACCENT
+      : template === "ortho"
+        ? ORTHO_ACCENT
+        : WARM_ACCENT;
   const primary = clampHex(brand?.primaryColor, fallbackPrimary);
   const accent = clampHex(brand?.accentColor, fallbackAccent);
   return {
