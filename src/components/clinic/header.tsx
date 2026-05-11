@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import type { Clinic } from "@/src/db/schema";
@@ -27,10 +28,11 @@ export function ClinicHeader({ clinic, basePath, current = "home" }: Props) {
           aria-label={`${clinic.name} — home`}
         >
           {clinic.brand?.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={clinic.brand.logoUrl}
               alt=""
+              width={36}
+              height={36}
               className="h-9 w-9 rounded-full object-cover"
             />
           ) : (

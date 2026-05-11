@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ClinicTeamMember } from "@/src/db/schema";
 
 type Props = {
@@ -40,12 +41,13 @@ export function TeamGrid({ team, heading, intro }: Props) {
               className="rounded-card border border-rule bg-white p-6"
             >
               {member.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={member.photoUrl}
                   alt=""
+                  width={80}
+                  height={80}
                   className="mb-4 h-20 w-20 rounded-full object-cover"
-                  loading="lazy"
+                  sizes="80px"
                 />
               ) : (
                 <div
