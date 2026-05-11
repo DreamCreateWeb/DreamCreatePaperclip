@@ -1,8 +1,8 @@
 import { Octokit } from "@octokit/rest";
 
 function getOctokit(): Octokit {
-  const token = process.env.GITHUB_TOKEN;
-  if (!token) throw new Error("GITHUB_TOKEN is not set");
+  const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  if (!token) throw new Error("GITHUB_TOKEN (or GH_TOKEN) is not set");
   return new Octokit({ auth: token });
 }
 
@@ -16,7 +16,7 @@ function templateRepo(): string {
 
 export async function cloneTemplateRepo(
   slug: string,
-): Promise<{ repoUrl: string }> {
+): Promise<{ repoUrl: string; repoId: number }> {
   const octokit = getOctokit();
   const owner = templateOwner();
 
@@ -32,7 +32,16 @@ export async function cloneTemplateRepo(
     },
   );
 
-  return { repoUrl: response.data.html_url };
+  return { repoUrl: response.data.html_url, repoId: response.data.id };
+}
+
+export async function getRepoId(slug: string): Promise<number> {
+  const octokit = getOctokit();
+  const { data } = await octokit.repos.get({
+    owner: templateOwner(),
+    repo: `clinic-${slug}`,
+  });
+  return data.id;
 }
 
 export async function deleteRepo(slug: string): Promise<void> {

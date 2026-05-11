@@ -27,6 +27,10 @@ export async function createVercelProject(
   slug: string,
   repoFullName: string,
 ): Promise<{ projectId: string }> {
+  const gitCredentialId =
+    process.env.VERCEL_GIT_CREDENTIAL_ID ??
+    "cred_8cc5d0c38956382722981719b6eeedec6dedeb0e";
+
   const res = await vercelFetch("/v10/projects", {
     method: "POST",
     body: JSON.stringify({
@@ -35,6 +39,7 @@ export async function createVercelProject(
       gitRepository: {
         type: "github",
         repo: repoFullName,
+        gitCredentialId,
       },
     }),
   });
@@ -69,6 +74,7 @@ export async function addVercelEnvVars(
 
 export async function triggerDeploy(
   projectId: string,
+  repoId: number,
 ): Promise<{ deploymentUrl: string }> {
   const res = await vercelFetch("/v13/deployments", {
     method: "POST",
@@ -78,6 +84,7 @@ export async function triggerDeploy(
       target: "production",
       gitSource: {
         type: "github",
+        repoId,
         ref: "main",
       },
     }),

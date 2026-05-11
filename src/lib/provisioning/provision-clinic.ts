@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { getDb, schema } from "@/src/db/client";
 
-import { cloneTemplateRepo, deleteRepo } from "./github";
+import { cloneTemplateRepo, deleteRepo, getRepoId } from "./github";
 import {
   addSubdomain,
   addVercelEnvVars,
@@ -91,7 +91,8 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       await logStep(clinicId, "deploy", async () => {
         // vercelProjectId is guaranteed set by the preceding vercel_create step
         const pid = vercelProjectId!;
-        const { deploymentUrl } = await triggerDeploy(pid);
+        const repoId = await getRepoId(clinic.slug);
+        const { deploymentUrl } = await triggerDeploy(pid, repoId);
         await db
           .update(schema.clinics)
           .set({ vercelDeploymentUrl: deploymentUrl })
