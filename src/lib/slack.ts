@@ -2,16 +2,24 @@ import crypto from "crypto";
 
 const CEO_DM_CHANNEL = "D0B3HFJ5PG8";
 
-export async function sendSlackDm(text: string, channel = CEO_DM_CHANNEL): Promise<void> {
+export async function sendSlackDm(
+  text: string,
+  channel = CEO_DM_CHANNEL,
+  thread_ts?: string,
+): Promise<void> {
   const token = process.env.SLACK_BOT_TOKEN;
   if (!token) {
     console.error("[slack] SLACK_BOT_TOKEN not set — cannot send DM");
     return;
   }
+  const body: Record<string, string> = { channel, text };
+  if (thread_ts) {
+    body.thread_ts = thread_ts;
+  }
   const res = await fetch("https://slack.com/api/chat.postMessage", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ channel, text }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     console.error("[slack] chat.postMessage HTTP error", res.status);
