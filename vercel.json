@@ -11,6 +11,10 @@
     {
       "path": "/api/slack/poll",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/weekly-review",
+      "schedule": "0 9 * * 1"
     }
   ]
 }
