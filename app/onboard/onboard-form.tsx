@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 
@@ -695,23 +695,11 @@ export function OnboardForm() {
             </FieldShell>
           </div>
           <div data-field="brand.logoUrl" className="sm:col-span-2">
-            <FieldShell
-              label="Logo URL"
-              htmlFor="logoUrl"
-              optional
-              hint="Paste a link to your logo. We'll add direct upload soon."
+            <LogoUploadField
+              value={logoUrl}
+              onChange={setLogoUrl}
               error={fieldError(errors, "brand.logoUrl")}
-            >
-              <input
-                id="logoUrl"
-                type="url"
-                className={inputClass}
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://yourclinic.com/logo.svg"
-                autoComplete="off"
-              />
-            </FieldShell>
+            />
           </div>
         </div>
       </Section>
@@ -1102,6 +1090,118 @@ function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+function LogoUploadField({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  error?: string | null;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/onboard/upload-logo", { method: "POST", body: fd });
+      const json = (await res.json()) as { ok: boolean; logoUrl?: string; error?: string };
+      if (json.ok && json.logoUrl) {
+        onChange(json.logoUrl);
+      } else {
+        setUploadError(
+          json.error === "invalid_file_type"
+            ? "Only PNG, JPG, SVG, and WebP files are allowed."
+            : json.error === "file_too_large"
+              ? "File must be 5 MB or smaller."
+              : "Upload failed. Please try again or paste a URL below.",
+        );
+      }
+    } catch {
+      setUploadError("Upload failed. Please try again or paste a URL below.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const displayError = uploadError ?? error ?? null;
+
+  return (
+    <FieldShell label="Logo" optional error={displayError}>
+      <div className="flex flex-col gap-3">
+        {/* File drop zone */}
+        <div
+          className="flex flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-rule bg-white px-5 py-8 transition hover:border-ink/30"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files?.[0];
+            if (file) void handleFile(file);
+          }}
+        >
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={value}
+              alt="Logo preview"
+              className="max-h-20 max-w-[200px] object-contain"
+            />
+          ) : (
+            <p className="text-sm text-ink-muted">
+              {uploading ? "Uploading…" : "Drag a file here"}
+            </p>
+          )}
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="rounded-pill border border-rule bg-white px-4 py-2 text-xs font-medium text-ink shadow-sm transition hover:border-ink/40 disabled:opacity-60"
+          >
+            {uploading ? "Uploading…" : value ? "Replace file" : "Choose file"}
+          </button>
+          <p className="text-xs text-ink-muted">PNG, JPG, SVG or WebP · max 5 MB</p>
+        </div>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void handleFile(file);
+            e.target.value = "";
+          }}
+        />
+
+        {/* URL fallback */}
+        <div className="flex items-center gap-2">
+          <hr className="flex-1 border-rule" />
+          <span className="text-xs text-ink-muted">or paste a URL</span>
+          <hr className="flex-1 border-rule" />
+        </div>
+        <input
+          id="logoUrl"
+          type="url"
+          className={inputClass}
+          value={value}
+          onChange={(e) => {
+            setUploadError(null);
+            onChange(e.target.value);
+          }}
+          placeholder="https://yourclinic.com/logo.svg"
+          autoComplete="off"
+        />
+      </div>
+    </FieldShell>
   );
 }
 
