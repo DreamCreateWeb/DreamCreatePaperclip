@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 
 import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
 import { getDb, schema } from "@/src/db/client";
@@ -72,6 +72,17 @@ export default async function ClinicDetailPage({ params }: { params: Params }) {
     .from(schema.clinicOwnerUsers)
     .where(eq(schema.clinicOwnerUsers.clinicId, id))
     .limit(1);
+
+  const [pendingRow] = await db
+    .select({ value: count() })
+    .from(schema.intakeSubmissions)
+    .where(
+      and(
+        eq(schema.intakeSubmissions.clinicId, id),
+        eq(schema.intakeSubmissions.status, "pending"),
+      ),
+    );
+  const pendingLeads = pendingRow?.value ?? 0;
 
   const badges = getClinicBadges(clinic);
 
@@ -208,6 +219,31 @@ export default async function ClinicDetailPage({ params }: { params: Params }) {
             value={new Date(clinic.updatedAt).toLocaleString()}
           />
         </dl>
+      </section>
+
+      <section className="mt-6 rounded-card border border-rule bg-white p-6">
+        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
+          Patient leads
+        </h2>
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-ink-muted">
+            {pendingLeads > 0 ? (
+              <>
+                <span className="font-medium text-ink">{pendingLeads} new</span>{" "}
+                {pendingLeads === 1 ? "submission" : "submissions"} awaiting
+                review.
+              </>
+            ) : (
+              "Intake form submissions from patients."
+            )}
+          </p>
+          <Link
+            href={`/admin/clinics/${id}/leads`}
+            className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted underline underline-offset-4 hover:text-ink"
+          >
+            View inbox →
+          </Link>
+        </div>
       </section>
 
       <section className="mt-6 rounded-card border border-rule bg-white p-6">

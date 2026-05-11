@@ -16,13 +16,28 @@ import { DEFAULT_INTAKE_SECTIONS } from "./default-template";
 import { notifyOwnerNewIntakeSubmission } from "./notify";
 import type { IntakeSubmitPayload } from "./intake-schema";
 
-function decryptSubmissionRow(row: IntakeSubmission): IntakeSubmission {
+export function decryptSubmissionRow(row: IntakeSubmission): IntakeSubmission {
+  const decryptField = (
+    encrypted: string | null,
+    fieldName: string,
+  ): string | null => {
+    if (!encrypted) return null;
+    try {
+      return decryptPhi(encrypted);
+    } catch (err) {
+      console.error(
+        `Failed to decrypt ${fieldName} for submission ${row.id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return "[decryption error]";
+    }
+  };
+
   return {
     ...row,
-    patientName: decryptPhi(row.patientName),
-    patientEmail: decryptPhi(row.patientEmail),
-    patientDob: row.patientDob ? decryptPhi(row.patientDob) : null,
-    responses: decryptPhi(row.responses),
+    patientName: decryptField(row.patientName, "patientName") as string,
+    patientEmail: decryptField(row.patientEmail, "patientEmail") as string,
+    patientDob: decryptField(row.patientDob, "patientDob"),
+    responses: decryptField(row.responses, "responses") as string,
   };
 }
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { eq, inArray, isNotNull } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
 import { getDb } from "@/src/db/client";
