@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/src/db/client";
 import { clinics, provisioningRuns } from "@/src/db/schema";
 import { getStripe } from "@/src/lib/stripe/client";
+import { claimStripeEvent } from "@/src/lib/stripe/idempotency";
 import {
   pauseUptimeMonitor,
   resumeUptimeMonitor,
@@ -74,6 +75,14 @@ export async function POST(req: Request) {
 
   try {
     const db = getDb();
+
+    // Idempotency: claim the event ID before processing. ON CONFLICT DO NOTHING
+    // means a concurrent or replayed delivery of the same event ID returns early.
+    const claimed = await claimStripeEvent(db, event.id);
+    if (!claimed) {
+      console.log(`[stripe/webhook] duplicate event ignored: ${event.id}`);
+      return NextResponse.json({ received: true });
+    }
 
     switch (event.type) {
       case "checkout.session.completed": {

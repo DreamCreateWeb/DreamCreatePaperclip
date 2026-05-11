@@ -1,0 +1,94 @@
+{
+  "name": "Sample Dental Clinic",
+  "slug": "sample-clinic-test",
+  "contactEmail": "contact@sample-clinic.test",
+  "contactPhone": "(555) 123-4567",
+  "address": {
+    "line1": "123 Main Street",
+    "city": "Springfield",
+    "state": "AR",
+    "postalCode": "72701"
+  },
+  "brand": {
+    "template": "warm",
+    "primaryColor": "#0a3d2e",
+    "accentColor": "#d8ebe2"
+  },
+  "services": [
+    {
+      "name": "General Dentistry",
+      "description": "Comprehensive dental care for the whole family."
+    },
+    {
+      "name": "Teeth Cleaning",
+      "description": "Professional cleanings to keep your smile healthy."
+    },
+    {
+      "name": "Fillings",
+      "description": "Tooth-colored fillings restore damaged teeth."
+    },
+    {
+      "name": "Crowns & Bridges",
+      "description": "Durable restorations for missing or damaged teeth."
+    },
+    {
+      "name": "Cosmetic Dentistry",
+      "description": "Enhance your smile with cosmetic treatments."
+    },
+    {
+      "name": "Tooth Whitening",
+      "description": "Professional whitening for a brighter smile."
+    }
+  ],
+  "team": [
+    {
+      "name": "Dr. Jane Smith",
+      "role": "General Dentist",
+      "bio": "DDS with 8 years of experience in family dentistry."
+    },
+    {
+      "name": "Dr. John Doe",
+      "role": "Associate Dentist",
+      "bio": "DDS, passionate about patient education and care."
+    },
+    {
+      "name": "Sarah Johnson",
+      "role": "Dental Hygienist",
+      "bio": "RDH with a focus on preventive care."
+    }
+  ],
+  "hours": [
+    { "day": "mon", "closed": false, "open": "08:00", "close": "17:00" },
+    { "day": "tue", "closed": false, "open": "08:00", "close": "17:00" },
+    { "day": "wed", "closed": false, "open": "08:00", "close": "17:00" },
+    { "day": "thu", "closed": false, "open": "08:00", "close": "17:00" },
+    { "day": "fri", "closed": false, "open": "08:00", "close": "16:00" },
+    { "day": "sat", "closed": true },
+    { "day": "sun", "closed": true }
+  ],
+  "social": {
+    "website": "https://sample-clinic.test",
+    "facebook": "https://www.facebook.com/sampleclinic",
+    "instagram": "https://www.instagram.com/sampleclinic"
+  },
+  "beforeAfterPairs": [
+    {
+      "label": "Cosmetic Restoration",
+      "before": {
+        "src": "https://example.com/before-1.jpg",
+        "alt": "Before cosmetic treatment"
+      },
+      "after": {
+        "src": "https://example.com/after-1.jpg",
+        "alt": "After cosmetic treatment"
+      }
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Alex Williams",
+      "rating": 5,
+      "quote": "Great experience, friendly staff, very professional."
+    }
+  ]
+}
