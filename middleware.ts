@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { decodeSessionCookie } from "@/src/lib/auth/crypto";
-import { SESSION_COOKIE_NAME } from "@/src/lib/auth/sessions";
-import { OWNER_SESSION_COOKIE_NAME } from "@/src/lib/owner-auth/sessions";
+import { SESSION_COOKIE_NAME } from "@/src/lib/auth/constants";
+import { OWNER_SESSION_COOKIE_NAME } from "@/src/lib/owner-auth/constants";
 
 export const config = {
   matcher: ["/admin/:path*", "/portal/:path*"],

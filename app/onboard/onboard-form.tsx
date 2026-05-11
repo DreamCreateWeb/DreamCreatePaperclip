@@ -10,7 +10,6 @@ import {
   type DayOfWeek,
   type OnboardingInput,
 } from "@/src/lib/onboarding/schema";
-import { onboardingSchema } from "@/src/lib/onboarding/schema";
 
 type FieldErrors = Record<string, string[]>;
 
@@ -98,7 +97,6 @@ export function OnboardForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [topError, setTopError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -271,25 +269,6 @@ export function OnboardForm() {
     setHours((prev) =>
       prev.map((row) => (row.day === day ? { ...row, ...patch } : row)),
     );
-  }
-
-  function validateField(fieldName: string, value: unknown) {
-    const tempPayload = buildPayload();
-    const result = onboardingSchema.safeParse(tempPayload);
-
-    if (!result.success) {
-      const fieldErrs = result.error.flatten().fieldErrors;
-      const errs = Object.entries(fieldErrs).reduce(
-        (acc, [key, msgs]) => {
-          acc[key] = msgs as string[];
-          return acc;
-        },
-        {} as FieldErrors,
-      );
-      setFieldErrors(errs);
-    } else {
-      setFieldErrors({});
-    }
   }
 
   function buildPayload(): OnboardingInput {

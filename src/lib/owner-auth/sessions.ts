@@ -12,7 +12,7 @@ import {
   type ClinicOwnerUser,
 } from "@/src/db/schema";
 
-export const OWNER_SESSION_COOKIE_NAME = "dc_owner_session";
+export { OWNER_SESSION_COOKIE_NAME } from "./constants";
 export const OWNER_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 export const OWNER_LOGIN_TOKEN_TTL_SECONDS = 60 * 15; // 15 minutes
 

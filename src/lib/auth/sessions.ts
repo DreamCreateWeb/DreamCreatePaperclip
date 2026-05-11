@@ -11,7 +11,7 @@ import {
 import { normalizeEmail } from "./admins";
 import { randomToken, sha256Hex } from "./crypto";
 
-export const SESSION_COOKIE_NAME = "dc_admin_session";
+export { SESSION_COOKIE_NAME } from "./constants";
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 export const LOGIN_TOKEN_TTL_SECONDS = 60 * 15; // 15 minutes
 
