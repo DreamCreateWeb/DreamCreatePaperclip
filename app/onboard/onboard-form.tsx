@@ -332,6 +332,11 @@ export function OnboardForm() {
       if (selectedCatalog.size === 0 && extraServices.length === 0) {
         errs.services = ["Please select or add at least one service"];
       }
+    } else if (step === 3) {
+      const hasValidTeamMember = team.some((t) => t.name.trim() && t.role.trim());
+      if (!hasValidTeamMember) {
+        errs.team = ["Please add at least one team member with a name and role"];
+      }
     }
 
     return errs;
@@ -354,6 +359,7 @@ export function OnboardForm() {
     ) {
       return 2;
     }
+    // Step 3: team, hours, social fields
     return 3;
   }
 
@@ -867,7 +873,7 @@ export function OnboardForm() {
         title="Team"
         description="Patients trust faces. Add at least the lead dentist; more is better."
       >
-        <div className="flex flex-col gap-4">
+        <div data-field="team" className="flex flex-col gap-4">
           {team.map((row, idx) => (
             <div
               key={idx}
