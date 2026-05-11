@@ -29,6 +29,8 @@ interface PaperclipIssue {
   id: string;
   identifier: string;
   title: string;
+  description?: string;
+  status?: string;
 }
 
 interface PaperclipComment {
@@ -125,7 +127,7 @@ export async function GET(req: NextRequest) {
       let existingIssue: PaperclipIssue | undefined;
       try {
         const searchRes = await fetch(
-          `${apiUrl}/api/companies/${COMPANY_ID}/issues?q=%5BSlack+DM%5D&status=todo,in_progress&assigneeAgentId=${CEO_AGENT_ID}`,
+          `${apiUrl}/api/companies/${COMPANY_ID}/issues?q=%5BSlack+DM%5D&status=todo,in_progress,done&assigneeAgentId=${CEO_AGENT_ID}`,
           { headers: { Authorization: `Bearer ${apiKey}` } },
         );
         const raw: unknown = searchRes.ok ? await searchRes.json() : [];
@@ -139,7 +141,13 @@ export async function GET(req: NextRequest) {
       }
 
       if (existingIssue) {
-        // 8c. Issue exists — check if this ts is already recorded in comments
+        // Bug B fix: skip if issue is done
+        if (existingIssue.status === "done") {
+          skipped++;
+          continue;
+        }
+
+        // 8c. Issue exists — check if this ts is already recorded in comments or description
         let alreadyLogged = false;
         try {
           const commentsRes = await fetch(`${apiUrl}/api/issues/${existingIssue.id}/comments`, {
@@ -154,6 +162,11 @@ export async function GET(req: NextRequest) {
           }
         } catch (err) {
           console.error(`[slack/poll] Error fetching comments for issue ${existingIssue.id}:`, err);
+        }
+
+        // Bug A fix: also check description for existing ts (first message of day)
+        if (!alreadyLogged && existingIssue.description?.includes(msg.ts)) {
+          alreadyLogged = true;
         }
 
         if (alreadyLogged) {
