@@ -4,7 +4,8 @@ import { getDb, schema } from "@/src/db/client";
 import { registerUptimeMonitor, removeUptimeMonitor } from "@/src/lib/uptime";
 import { sendProvisioningFailure, sendProvisioningSuccess } from "@/src/lib/slack";
 
-import { cloneTemplateRepo, deleteRepo, getRepoId } from "./github";
+import { deleteRepo, getRepoId } from "./github";
+import { githubProvisionStep } from "./github-step";
 import {
   addSubdomain,
   addVercelEnvVars,
@@ -66,7 +67,7 @@ export async function provisionClinic(clinicId: string): Promise<void> {
     if (!repoUrl) {
       lastStep = "clone";
       await logStep(clinicId, "clone", async () => {
-        const result = await cloneTemplateRepo(clinic.slug);
+        const result = await githubProvisionStep(clinicId);
         repoUrl = result.repoUrl;
         await db
           .update(schema.clinics)
@@ -86,7 +87,7 @@ export async function provisionClinic(clinicId: string): Promise<void> {
       await logStep(clinicId, "vercel_create", async () => {
         const owner =
           process.env.GITHUB_TEMPLATE_OWNER ?? "DreamCreateWeb";
-        const repoFullName = `${owner}/clinic-${clinic.slug}`;
+        const repoFullName = `${owner}/dreamcreate-${clinic.slug}`;
         const result = await createVercelProject(clinic.slug, repoFullName);
         vercelProjectId = result.projectId;
         await addVercelEnvVars(vercelProjectId, clinic.slug);
