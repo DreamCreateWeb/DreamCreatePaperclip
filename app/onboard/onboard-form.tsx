@@ -1175,6 +1175,7 @@ function LogoUploadField({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [cropMode, setCropMode] = useState(false);
 
   async function handleFile(file: File) {
     setUploadError(null);
@@ -1203,6 +1204,21 @@ function LogoUploadField({
   }
 
   const displayError = uploadError ?? error ?? null;
+
+  if (cropMode && value) {
+    return (
+      <FieldShell label="Logo" optional error={displayError}>
+        <LogoCropper
+          imageUrl={value}
+          onCropComplete={(croppedUrl) => {
+            onChange(croppedUrl);
+            setCropMode(false);
+          }}
+          onCancel={() => setCropMode(false)}
+        />
+      </FieldShell>
+    );
+  }
 
   return (
     <FieldShell label="Logo" optional error={displayError}>
@@ -1239,6 +1255,15 @@ function LogoUploadField({
           </button>
           <p className="text-xs text-ink-muted">PNG, JPG, SVG or WebP · max 5 MB</p>
         </div>
+        {value && !cropMode && (
+          <button
+            type="button"
+            onClick={() => setCropMode(true)}
+            className="self-start text-xs font-medium uppercase tracking-[0.16em] text-accent underline-offset-4 hover:underline"
+          >
+            Crop & center logo
+          </button>
+        )}
 
         <input
           ref={fileRef}
@@ -1272,6 +1297,209 @@ function LogoUploadField({
         />
       </div>
     </FieldShell>
+  );
+}
+
+function LogoCropper({
+  imageUrl,
+  onCropComplete,
+  onCancel,
+}: {
+  imageUrl: string;
+  onCropComplete: (croppedUrl: string) => void;
+  onCancel: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [ratio, setRatio] = useState<"square" | "horizontal">("square");
+  const [cropX, setCropX] = useState(0);
+  const [cropY, setCropY] = useState(0);
+  const [cropSize, setCropSize] = useState(200);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
+
+  const cropWidth = cropSize;
+  const cropHeight = ratio === "square" ? cropSize : Math.round(cropSize / 16 * 9);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+
+    const handleLoad = () => {
+      setImgSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setCropSize(Math.min(img.naturalWidth, img.naturalHeight) / 2);
+    };
+
+    if (img.complete) {
+      handleLoad();
+    } else {
+      img.addEventListener("load", handleLoad);
+      return () => img.removeEventListener("load", handleLoad);
+    }
+  }, [imageUrl]);
+
+  function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    if (!containerRef.current) return;
+    setIsDragging(true);
+    const rect = containerRef.current.getBoundingClientRect();
+    setDragStart({ x: e.clientX - rect.left - cropX, y: e.clientY - rect.top - cropY });
+  }
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isDragging || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const newX = e.clientX - rect.left - dragStart.x;
+    const newY = e.clientY - rect.top - dragStart.y;
+
+    setCropX(Math.max(0, Math.min(newX, imgSize.width - cropWidth)));
+    setCropY(Math.max(0, Math.min(newY, imgSize.height - cropHeight)));
+  }
+
+  function handleMouseUp() {
+    setIsDragging(false);
+  }
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      let clientX = 0,
+        clientY = 0;
+
+      if (e instanceof MouseEvent) {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      } else if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+
+      const newX = clientX - rect.left - dragStart.x;
+      const newY = clientY - rect.top - dragStart.y;
+
+      setCropX(Math.max(0, Math.min(newX, imgSize.width - cropWidth)));
+      setCropY(Math.max(0, Math.min(newY, imgSize.height - cropHeight)));
+    };
+
+    const handleEnd = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("touchmove", handleMove);
+    document.addEventListener("mouseup", handleEnd);
+    document.addEventListener("touchend", handleEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("touchmove", handleMove);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchend", handleEnd);
+    };
+  }, [isDragging, dragStart, cropWidth, cropHeight, imgSize]);
+
+  function handleCrop() {
+    const img = imgRef.current;
+    const canvas = canvasRef.current;
+    if (!img || !canvas) return;
+
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    const dataUrl = canvas.toDataURL("image/png");
+    onCropComplete(dataUrl);
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setRatio("square")}
+          className={`rounded-pill px-4 py-2 text-xs font-medium uppercase tracking-[0.16em] transition ${
+            ratio === "square"
+              ? "bg-accent text-white"
+              : "border border-rule bg-white text-ink hover:border-ink/40"
+          }`}
+        >
+          Square
+        </button>
+        <button
+          type="button"
+          onClick={() => setRatio("horizontal")}
+          className={`rounded-pill px-4 py-2 text-xs font-medium uppercase tracking-[0.16em] transition ${
+            ratio === "horizontal"
+              ? "bg-accent text-white"
+              : "border border-rule bg-white text-ink hover:border-ink/40"
+          }`}
+        >
+          Horizontal (16:9)
+        </button>
+      </div>
+
+      <div
+        ref={containerRef}
+        className="relative rounded-card border border-rule bg-white overflow-hidden cursor-move select-none"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "400px",
+          aspectRatio: `${imgSize.width} / ${imgSize.height}`,
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={(e) => {
+          setIsDragging(true);
+          const touch = e.touches[0];
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          setDragStart({ x: touch.clientX - rect.left - cropX, y: touch.clientY - rect.top - cropY });
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={imgRef}
+          src={imageUrl}
+          alt="Crop preview"
+          className="w-full h-full object-cover"
+        />
+
+        <div
+          className="absolute border-2 border-accent bg-accent/10 pointer-events-none"
+          style={{
+            left: `${(cropX / imgSize.width) * 100}%`,
+            top: `${(cropY / imgSize.height) * 100}%`,
+            width: `${(cropWidth / imgSize.width) * 100}%`,
+            height: `${(cropHeight / imgSize.height) * 100}%`,
+          }}
+        />
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-pill border border-rule bg-white px-4 py-3 text-sm font-medium text-ink shadow-sm transition hover:border-ink/40"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleCrop}
+          className="flex-1 rounded-pill bg-accent px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-ink"
+        >
+          Apply crop
+        </button>
+      </div>
+
+      <canvas ref={canvasRef} className="sr-only" />
+    </div>
   );
 }
 
