@@ -8,7 +8,12 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function OnboardPage() {
+export default async function OnboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ token?: string }>;
+}) {
+  const { token } = await searchParams;
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-6 py-16 sm:py-20">
       <header className="mb-14">
@@ -45,7 +50,7 @@ export default function OnboardPage() {
         </ul>
       </header>
 
-      <OnboardForm />
+      <OnboardForm resumeToken={token} />
 
       <footer className="mt-16 text-xs text-ink-muted">
         Already have an operator account?{" "}

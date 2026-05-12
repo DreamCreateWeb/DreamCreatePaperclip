@@ -1,68 +1,55 @@
-import { google, drive_v3 } from "googleapis";
+import { google } from "googleapis";
+import type { drive_v3 } from "googleapis";
 
-let driveClient: drive_v3.Drive | null = null;
-
-function getServiceAccount(): Record<string, unknown> {
-  const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  if (!json) {
-    const msg = "[google-drive] GOOGLE_SERVICE_ACCOUNT_JSON env var not set";
+function getServiceAccountCredentials(): Record<string, unknown> {
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!raw) {
+    const msg = "[google-drive] GOOGLE_SERVICE_ACCOUNT_JSON is not set";
     console.error(msg);
     throw new Error(msg);
   }
-
   try {
-    return JSON.parse(json);
-  } catch (err) {
-    const msg = `[google-drive] Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: ${err instanceof Error ? err.message : String(err)}`;
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    const msg = "[google-drive] GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON";
     console.error(msg);
     throw new Error(msg);
   }
 }
 
-function initDriveClient(): drive_v3.Drive {
-  if (driveClient) return driveClient;
-
-  const serviceAccount = getServiceAccount();
-  const auth = new google.auth.JWT({
-    email: serviceAccount.client_email as string,
-    key: serviceAccount.private_key as string,
-    scopes: ["https://www.googleapis.com/auth/drive"],
+function getDriveClient(): drive_v3.Drive {
+  const credentials = getServiceAccountCredentials();
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
   });
-
-  driveClient = google.drive({ version: "v3", auth });
-  return driveClient;
+  return google.drive({ version: "v3", auth });
 }
 
 export async function listFolder(folderId: string): Promise<drive_v3.Schema$File[]> {
-  const drive = initDriveClient();
-  const query = `'${folderId}' in parents and trashed=false`;
-
+  const drive = getDriveClient();
+  const escapedId = folderId.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   const res = await drive.files.list({
-    q: query,
-    spaces: "drive",
-    pageSize: 100,
-    fields: "files(id, name, mimeType, createdTime, modifiedTime, parents)",
+    q: `'${escapedId}' in parents and trashed = false`,
+    fields: "files(id, name, mimeType, size, modifiedTime, webViewLink)",
   });
-
   return res.data.files ?? [];
 }
 
 export async function getFile(fileId: string): Promise<drive_v3.Schema$File> {
-  const drive = initDriveClient();
+  const drive = getDriveClient();
   const res = await drive.files.get({
     fileId,
-    fields: "id, name, mimeType, createdTime, modifiedTime, parents, webViewLink",
+    fields: "id, name, mimeType, size, modifiedTime, webViewLink",
   });
-
   return res.data;
 }
 
 export async function downloadFile(fileId: string): Promise<Buffer> {
-  const drive = initDriveClient();
+  const drive = getDriveClient();
   const res = await drive.files.get(
     { fileId, alt: "media" },
     { responseType: "arraybuffer" },
   );
-
   return Buffer.from(res.data as ArrayBuffer);
 }

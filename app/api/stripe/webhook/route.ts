@@ -1,10 +1,11 @@
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/src/db/client";
-import { clinics, provisioningRuns } from "@/src/db/schema";
-import { getStripe } from "@/src/lib/stripe/client";
+import { clinics } from "@/src/db/schema";
+import { getStripe, getStripeWebhookSecret } from "@/src/lib/stripe/client";
 import { claimStripeEvent } from "@/src/lib/stripe/idempotency";
+import { runProvisioning } from "@/src/lib/provisioning/orchestrate";
 import {
   pauseUptimeMonitor,
   resumeUptimeMonitor,
@@ -13,46 +14,11 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function triggerProvisioning(clinicId: string) {
-  const db = getDb();
-
-  // Idempotency check: skip if active provisioning run exists
-  const activeRun = await db
-    .select()
-    .from(provisioningRuns)
-    .where(
-      and(
-        eq(provisioningRuns.clinicId, clinicId),
-        ne(provisioningRuns.status, "failed"),
-      ),
-    )
-    .limit(1);
-
-  if (activeRun.length > 0) {
-    console.log(
-      `[stripe/webhook] skipping provisioning for clinic ${clinicId}: active run exists`,
-    );
-    return;
-  }
-
-  // Insert provisioning run
-  await db.insert(provisioningRuns).values({
-    clinicId,
-    step: "clone",
-    status: "pending",
-  });
-
-  // TODO: Call orchestrator to start provisioning (DRE-40)
-  // For now, this is a stub:
-  // const result = await runProvisioning(clinicId);
-  console.log(
-    `[stripe/webhook] provisioning queued for clinic ${clinicId}`,
-  );
-}
-
 export async function POST(req: Request) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
+  let webhookSecret: string;
+  try {
+    webhookSecret = getStripeWebhookSecret();
+  } catch {
     console.error("[stripe/webhook] STRIPE_WEBHOOK_SECRET not configured");
     return NextResponse.json({ error: "misconfigured" }, { status: 500 });
   }
@@ -135,7 +101,9 @@ export async function POST(req: Request) {
                 .update(clinics)
                 .set({ status: "provisioning", updatedAt: new Date() })
                 .where(eq(clinics.id, clinic.id));
-              await triggerProvisioning(clinic.id);
+              void runProvisioning(clinic.id).catch((err) =>
+                console.error("[stripe/webhook] provisioning failed", err),
+              );
             } else if (
               (clinic.status === "paused" || clinic.status === "past_due") &&
               clinic.uptimeMonitorId

@@ -17,7 +17,7 @@ function templateRepo(): string {
   return process.env.GITHUB_TEMPLATE_REPO ?? "DreamCreate-Master-Template";
 }
 
-function generateClinicConfig(
+export function generateClinicConfig(
   clinic: typeof schema.clinics.$inferSelect,
 ): string {
   const configObject = {

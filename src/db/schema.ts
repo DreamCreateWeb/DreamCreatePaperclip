@@ -619,3 +619,31 @@ export const processedStripeEvents = pgTable(
 );
 
 export type ProcessedStripeEvent = typeof processedStripeEvents.$inferSelect;
+
+export const onboardingDrafts = pgTable(
+  "onboarding_drafts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    payload: jsonb("payload").notNull(),
+    lastStep: smallint("last_step").notNull().default(1),
+    linkExpiresAt: timestamp("link_expires_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("onboarding_drafts_email_unique").on(t.email),
+    uniqueIndex("onboarding_drafts_token_hash_unique").on(t.tokenHash),
+    index("onboarding_drafts_expires_idx").on(t.expiresAt),
+  ],
+);
+
+export type OnboardingDraft = typeof onboardingDrafts.$inferSelect;
+export type NewOnboardingDraft = typeof onboardingDrafts.$inferInsert;

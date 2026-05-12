@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { desc, eq, inArray } from "drizzle-orm";
 
 import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
+import { getDb, schema } from "@/src/db/client";
 import {
   CLINIC_LIST_PAGE_SIZE,
   listClinicsAdminView,
@@ -15,6 +17,7 @@ import {
 
 import { OwnerInviteRow } from "./owner-invite-row";
 import { ProvisionButton } from "./provision-button";
+import { ReprovisionButton } from "./reprovision-button";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,13 @@ const CLINIC_STATUS_LABEL: Record<string, string> = {
   paused: "Paused",
   past_due: "Past due",
   cancelled: "Cancelled",
+};
+
+const RUN_STATUS_CLASS: Record<string, string> = {
+  pending: "bg-yellow-50 text-yellow-700",
+  running: "bg-blue-50 text-blue-700",
+  succeeded: "bg-emerald-50 text-emerald-700",
+  failed: "bg-red-50 text-red-700",
 };
 
 function Badge({ label, className }: { label: string; className: string }) {
@@ -64,6 +74,31 @@ export default async function AdminClinicsPage({
   const totalPages = data
     ? Math.max(1, Math.ceil(data.total / CLINIC_LIST_PAGE_SIZE))
     : 1;
+
+  // Fetch latest provisioning run per clinic
+  const latestRunByClinic = new Map<
+    string,
+    typeof schema.provisioningRuns.$inferSelect
+  >();
+  if (data && data.rows.length > 0) {
+    const db = getDb();
+    const clinicIds = data.rows.map((r) => r.clinic.id);
+    const runs = await db
+      .select()
+      .from(schema.provisioningRuns)
+      .where(
+        clinicIds.length === 1
+          ? eq(schema.provisioningRuns.clinicId, clinicIds[0])
+          : inArray(schema.provisioningRuns.clinicId, clinicIds),
+      )
+      .orderBy(desc(schema.provisioningRuns.createdAt));
+
+    for (const run of runs) {
+      if (!latestRunByClinic.has(run.clinicId)) {
+        latestRunByClinic.set(run.clinicId, run);
+      }
+    }
+  }
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-6 py-16">
@@ -119,14 +154,17 @@ export default async function AdminClinicsPage({
         ) : (
           data.rows.map(({ clinic, owner }) => {
             const badges = getClinicBadges(clinic);
+            const latestRun = latestRunByClinic.get(clinic.id);
+            const hasFailedRun = latestRun?.status === "failed";
+
             return (
               <article
                 key={clinic.id}
-                className="group rounded-card border border-rule bg-white shadow-sm transition hover:border-ink"
+                className="group rounded-card border border-rule bg-white shadow-sm"
               >
                 <Link
                   href={`/admin/clinics/${clinic.id}`}
-                  className="block p-6"
+                  className="block p-6 transition hover:bg-gray-50"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -160,7 +198,25 @@ export default async function AdminClinicsPage({
                           label={SENTRY_BADGE_CONFIG[badges.sentry].label}
                           className={SENTRY_BADGE_CONFIG[badges.sentry].className}
                         />
+                        {latestRun && (
+                          <>
+                            <span className="ml-2 text-xs text-ink-muted">
+                              Provision:
+                            </span>
+                            <span
+                              className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATUS_CLASS[latestRun.status] ?? "bg-gray-50 text-gray-600"}`}
+                            >
+                              {latestRun.step} · {latestRun.status}
+                            </span>
+                          </>
+                        )}
                       </div>
+
+                      {hasFailedRun && latestRun.error && (
+                        <p className="mt-2 text-xs text-red-600 line-clamp-2">
+                          Error: {latestRun.error}
+                        </p>
+                      )}
                     </div>
 
                     <div className="shrink-0 text-right">
@@ -180,11 +236,32 @@ export default async function AdminClinicsPage({
                   </div>
                 </Link>
 
-                <div className="border-t border-rule px-6 pb-4 pt-3">
-                  {(clinic.status === "draft" ||
-                    clinic.status === "pending_payment") && (
-                    <ProvisionButton clinicId={clinic.id} />
-                  )}
+                <div className="border-t border-rule px-6 pb-4 pt-3 space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {(clinic.status === "draft" ||
+                      clinic.status === "pending_payment") && (
+                      <ProvisionButton clinicId={clinic.id} />
+                    )}
+                    {hasFailedRun && (
+                      <ReprovisionButton clinicId={clinic.id} />
+                    )}
+                    <Link
+                      href={`/admin/clinics/${clinic.id}/edit`}
+                      className="inline-flex items-center rounded border border-rule px-4 py-2 text-xs font-medium text-ink-muted hover:border-ink hover:text-ink"
+                    >
+                      Edit site
+                    </Link>
+                    {clinic.vercelDeploymentUrl && (
+                      <a
+                        href={clinic.vercelDeploymentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-ink-muted underline underline-offset-2 hover:text-ink"
+                      >
+                        View site →
+                      </a>
+                    )}
+                  </div>
                   <OwnerInviteRow
                     clinicId={clinic.id}
                     currentOwnerEmail={owner?.email ?? null}
