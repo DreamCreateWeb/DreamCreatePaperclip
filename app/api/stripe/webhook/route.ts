@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/src/db/client";
 import { clinics } from "@/src/db/schema";
-import { getStripe } from "@/src/lib/stripe/client";
+import { getStripe, getStripeWebhookSecret } from "@/src/lib/stripe/client";
 import { claimStripeEvent } from "@/src/lib/stripe/idempotency";
 import { runProvisioning } from "@/src/lib/provisioning/orchestrate";
 import {
@@ -15,8 +15,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
+  let webhookSecret: string;
+  try {
+    webhookSecret = getStripeWebhookSecret();
+  } catch {
     console.error("[stripe/webhook] STRIPE_WEBHOOK_SECRET not configured");
     return NextResponse.json({ error: "misconfigured" }, { status: 500 });
   }
