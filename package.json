@@ -15,7 +15,8 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:seed": "tsx scripts/db-seed.ts",
     "db:studio": "drizzle-kit studio",
-    "lhci": "lhci autorun"
+    "lhci": "lhci autorun",
+    "e2e:smoke": "playwright test e2e/smoke.spec.ts"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.1",

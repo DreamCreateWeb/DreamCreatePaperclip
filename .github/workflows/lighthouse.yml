@@ -1,7 +1,8 @@
 name: Lighthouse CI
 
-# Runs only on PRs that touch the clinic template.
-# Escape hatch: add the `skip-lighthouse` label to bypass this check for one-off exceptions.
+# PR job: runs on clinic-template PRs, tests Vercel preview URL.
+# Escape hatch: add the `skip-lighthouse` label to bypass.
+# Live job: runs on push to main, tests the Vercel demo URL for M0 marketing routes.
 on:
   pull_request:
     paths:
@@ -10,12 +11,14 @@ on:
       - "app/globals.css"
       - "app/layout.tsx"
       - ".lighthouserc.js"
+  push:
+    branches:
+      - main
 
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
-    # Skip if the PR carries the escape-hatch label.
-    if: "!contains(github.event.pull_request.labels.*.name, 'skip-lighthouse')"
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-lighthouse')
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +46,38 @@ jobs:
             ${{ steps.vercel_preview.outputs.url }}/sites/${{ vars.LHCI_CLINIC_SLUG || 'smile-bright-rogers' }}
             ${{ steps.vercel_preview.outputs.url }}/sites/${{ vars.LHCI_CLINIC_SLUG || 'smile-bright-rogers' }}/services
             ${{ steps.vercel_preview.outputs.url }}/sites/${{ vars.LHCI_CLINIC_SLUG || 'smile-bright-rogers' }}/contact
+          configPath: .lighthouserc.js
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  # M0 budget gate: audits the live Vercel demo URL on every push to main.
+  # Requires VERCEL_DEMO_URL to be set as a GitHub Actions repository variable.
+  # Add it once DRE-187 (Vercel deploy) is done and the live URL is known.
+  lighthouse-live:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && vars.VERCEL_DEMO_URL != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lighthouse CI against live Vercel URL (M0 marketing routes)
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ vars.VERCEL_DEMO_URL }}/
+            ${{ vars.VERCEL_DEMO_URL }}/services
+            ${{ vars.VERCEL_DEMO_URL }}/about
+            ${{ vars.VERCEL_DEMO_URL }}/contact
+            ${{ vars.VERCEL_DEMO_URL }}/sign-in
           configPath: .lighthouserc.js
           uploadArtifacts: true
           temporaryPublicStorage: true
