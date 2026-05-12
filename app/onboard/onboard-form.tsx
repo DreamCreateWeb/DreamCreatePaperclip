@@ -88,15 +88,18 @@ function FieldShell({
 const inputClass =
   "rounded-card border border-rule bg-white px-4 py-3 text-base text-ink shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent-soft placeholder:text-ink-muted/60";
 
-const STORAGE_KEY = "onboard_form_state";
+const SESSION_ID_KEY = "onboard_session_id";
+const STORAGE_KEY_PREFIX = "onboard_draft_";
 const TOTAL_STEPS = 3;
 
-export function OnboardForm() {
+export function OnboardForm({ resumeToken }: { resumeToken?: string }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [topError, setTopError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const sessionKeyRef = useRef<string>("");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -133,67 +136,105 @@ export function OnboardForm() {
 
   const [nickname, setNickname] = useState(""); // honeypot
 
-  // Load from localStorage on mount
+  function applyState(state: Record<string, unknown>) {
+    setName((state.name as string) || "");
+    setSlug((state.slug as string) || "");
+    setContactName((state.contactName as string) || "");
+    setContactEmail((state.contactEmail as string) || "");
+    setContactPhone((state.contactPhone as string) || "");
+    setLine1((state.line1 as string) || "");
+    setLine2((state.line2 as string) || "");
+    setCity((state.city as string) || "");
+    setStateCode((state.stateCode as string) || "AR");
+    setPostalCode((state.postalCode as string) || "");
+    setTemplate((state.template as "warm" | "modern" | "ortho" | "pediatric") || "warm");
+    setPrimaryColor((state.primaryColor as string) || "#0a3d2e");
+    setAccentColor((state.accentColor as string) || "#d8ebe2");
+    setLogoUrl((state.logoUrl as string) || "");
+    setSelectedCatalog(new Set((state.selectedCatalog as string[]) || ["General dentistry"]));
+    setExtraServices((state.extraServices as ServiceRow[]) || []);
+    setTeam((state.team as TeamRow[]) || [{ name: "", role: "", bio: "", photoUrl: "" }]);
+    setHours((state.hours as HoursRow[]) || DEFAULT_HOURS);
+    setWebsite((state.website as string) || "");
+    setFacebook((state.facebook as string) || "");
+    setInstagram((state.instagram as string) || "");
+    setGoogle((state.google as string) || "");
+  }
+
+  // Mount: initialize session key, then load saved state or rehydrate from resume token
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    let id = localStorage.getItem(SESSION_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(SESSION_ID_KEY, id);
+    }
+    sessionKeyRef.current = `${STORAGE_KEY_PREFIX}${id}`;
+
+    if (resumeToken) {
+      fetch(`/api/onboard/resume?token=${encodeURIComponent(resumeToken)}`)
+        .then((r) => r.json())
+        .then((json: { ok: boolean; payload?: Record<string, unknown>; lastStep?: number }) => {
+          if (json.ok && json.payload) {
+            applyState(json.payload);
+            if (typeof json.lastStep === "number" && json.lastStep >= 1 && json.lastStep <= TOTAL_STEPS) {
+              setCurrentStep(json.lastStep);
+            }
+          }
+        })
+        .catch(() => undefined);
+      return;
+    }
+
+    const saved = localStorage.getItem(sessionKeyRef.current);
     if (saved) {
       try {
-        const state = JSON.parse(saved);
-        setName(state.name || "");
-        setSlug(state.slug || "");
-        setContactName(state.contactName || "");
-        setContactEmail(state.contactEmail || "");
-        setContactPhone(state.contactPhone || "");
-        setLine1(state.line1 || "");
-        setLine2(state.line2 || "");
-        setCity(state.city || "");
-        setStateCode(state.stateCode || "AR");
-        setPostalCode(state.postalCode || "");
-        setTemplate(state.template || "warm");
-        setPrimaryColor(state.primaryColor || "#0a3d2e");
-        setAccentColor(state.accentColor || "#d8ebe2");
-        setLogoUrl(state.logoUrl || "");
-        setSelectedCatalog(new Set(state.selectedCatalog || ["General dentistry"]));
-        setExtraServices(state.extraServices || []);
-        setTeam(state.team || [{ name: "", role: "", bio: "", photoUrl: "" }]);
-        setHours(state.hours || DEFAULT_HOURS);
-        setWebsite(state.website || "");
-        setFacebook(state.facebook || "");
-        setInstagram(state.instagram || "");
-        setGoogle(state.google || "");
+        applyState(JSON.parse(saved) as Record<string, unknown>);
       } catch {
-        // Ignore parse errors
+        // ignore
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Autosave to localStorage
+  // Autosave to localStorage (1s debounce)
   useEffect(() => {
-    const state = {
-      name,
-      slug,
-      contactName,
-      contactEmail,
-      contactPhone,
-      line1,
-      line2,
-      city,
-      stateCode,
-      postalCode,
-      template,
-      primaryColor,
-      accentColor,
-      logoUrl,
-      selectedCatalog: Array.from(selectedCatalog),
-      extraServices,
-      team,
-      hours,
-      website,
-      facebook,
-      instagram,
-      google,
+    const key = sessionKeyRef.current;
+    if (!key) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      if (!sessionKeyRef.current) return;
+      const state = {
+        name,
+        slug,
+        contactName,
+        contactEmail,
+        contactPhone,
+        line1,
+        line2,
+        city,
+        stateCode,
+        postalCode,
+        template,
+        primaryColor,
+        accentColor,
+        logoUrl,
+        selectedCatalog: Array.from(selectedCatalog),
+        extraServices,
+        team,
+        hours,
+        website,
+        facebook,
+        instagram,
+        google,
+      };
+      localStorage.setItem(sessionKeyRef.current, JSON.stringify(state));
+    }, 1000);
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [
     name,
     slug,
@@ -218,6 +259,46 @@ export function OnboardForm() {
     instagram,
     google,
   ]);
+
+  function buildFormState() {
+    return {
+      name,
+      slug,
+      contactName,
+      contactEmail,
+      contactPhone,
+      line1,
+      line2,
+      city,
+      stateCode,
+      postalCode,
+      template,
+      primaryColor,
+      accentColor,
+      logoUrl,
+      selectedCatalog: Array.from(selectedCatalog),
+      extraServices,
+      team,
+      hours,
+      website,
+      facebook,
+      instagram,
+      google,
+    };
+  }
+
+  function saveDraftToServer(emailValue: string) {
+    if (!emailValue.includes("@")) return;
+    fetch("/api/onboard/draft", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: emailValue,
+        formState: buildFormState(),
+        lastStep: currentStep,
+      }),
+    }).catch(() => undefined);
+  }
 
   const slugPlaceholder = useMemo(() => {
     if (!name.trim()) return "auto-generated from clinic name";
@@ -410,7 +491,8 @@ export function OnboardForm() {
       });
 
       if (res.ok) {
-        localStorage.removeItem(STORAGE_KEY);
+        if (sessionKeyRef.current) localStorage.removeItem(sessionKeyRef.current);
+        localStorage.removeItem(SESSION_ID_KEY);
         const json = (await res.json()) as { slug?: string; clinicId?: string };
         const targetSlug = json.slug ?? "queued";
         const params = new URLSearchParams({ slug: targetSlug });
@@ -581,6 +663,7 @@ export function OnboardForm() {
                 className={inputClass}
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
+                onBlur={(e) => saveDraftToServer(e.target.value)}
                 placeholder="hello@yourclinic.com"
                 autoComplete="email"
                 required

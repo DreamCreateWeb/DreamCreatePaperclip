@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createOnboardingSubmission } from "@/src/lib/onboarding/service";
+import { deleteDraftByEmail } from "@/src/lib/onboarding/draft-service";
 import {
   flattenZodErrors,
   onboardingSchema,
@@ -64,6 +65,8 @@ export async function POST(req: Request) {
       ip,
       userAgent: req.headers.get("user-agent"),
     });
+    // Clean up any saved draft for this email — submission is complete.
+    await deleteDraftByEmail(parsed.data.contactEmail).catch(() => undefined);
     return NextResponse.json({
       ok: true,
       clinicId: result.clinicId,

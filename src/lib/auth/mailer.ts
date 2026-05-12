@@ -9,9 +9,15 @@ export type OwnerLoginEmail = LoginEmail & {
   clinicName: string;
 };
 
+export type OnboardingResumeEmail = {
+  to: string;
+  url: string;
+};
+
 export interface Mailer {
   sendLoginLink(email: LoginEmail): Promise<void>;
   sendOwnerLoginLink(email: OwnerLoginEmail): Promise<void>;
+  sendOnboardingResumeLink(email: OnboardingResumeEmail): Promise<void>;
 }
 
 export class ConsoleMailer implements Mailer {
@@ -25,6 +31,14 @@ export class ConsoleMailer implements Mailer {
 
   async sendOwnerLoginLink(email: OwnerLoginEmail): Promise<void> {
     const banner = `===== ${email.clinicName} portal magic link =====`;
+    console.log(`\n${banner}`);
+    console.log(`To:   ${normalizeEmail(email.to)}`);
+    console.log(`Link: ${email.url}`);
+    console.log(`${"=".repeat(banner.length)}\n`);
+  }
+
+  async sendOnboardingResumeLink(email: OnboardingResumeEmail): Promise<void> {
+    const banner = "===== Dream Create onboarding resume link =====";
     console.log(`\n${banner}`);
     console.log(`To:   ${normalizeEmail(email.to)}`);
     console.log(`Link: ${email.url}`);
@@ -83,6 +97,15 @@ class ResendMailer implements Mailer {
       subject: `Sign in to ${clinicName}`,
       text: `Sign in to your ${clinicName} owner portal:\n\n${url}\n\nThis link expires in 15 minutes. If you didn't request it, ignore this email.`,
       html: `<p>Sign in to your <strong>${clinicName}</strong> owner portal:</p><p><a href="${url}">${url}</a></p><p style="color:#666">This link expires in 15 minutes. If you didn't request it, ignore this email.</p>`,
+    });
+  }
+
+  async sendOnboardingResumeLink({ to, url }: OnboardingResumeEmail): Promise<void> {
+    await this.send({
+      to,
+      subject: "Resume your Dream Create onboarding",
+      text: `You left your clinic onboarding form in progress. Pick up where you left off:\n\n${url}\n\nThis link expires in 24 hours. If you didn't start an onboarding form, you can ignore this email.`,
+      html: `<p>You left your clinic onboarding form in progress. Pick up where you left off:</p><p><a href="${url}">${url}</a></p><p style="color:#666">This link expires in 24 hours. If you didn't start an onboarding form, you can ignore this email.</p>`,
     });
   }
 }
