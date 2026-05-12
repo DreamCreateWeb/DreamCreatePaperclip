@@ -13,7 +13,15 @@ export function getDatabaseUrl(): string {
       "DATABASE_URL is not set. Add it to .env (Railway Postgres or local docker-compose).",
     );
   }
-  return url;
+  // PgBouncer (Neon pooler) does not support channel_binding; strip it so
+  // postgres.js doesn't send a SCRAM binding that the proxy rejects.
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("channel_binding");
+    return u.toString();
+  } catch {
+    return url;
+  }
 }
 
 export function getDb() {
