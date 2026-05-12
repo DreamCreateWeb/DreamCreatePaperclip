@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function ProvisionButton({ clinicId }: { clinicId: string }) {
+export function ReprovisionButton({ clinicId }: { clinicId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -18,7 +18,7 @@ export function ProvisionButton({ clinicId }: { clinicId: string }) {
 
     try {
       const res = await fetch(
-        `/api/admin/clinics/${encodeURIComponent(clinicId)}/provision`,
+        `/api/admin/clinics/${encodeURIComponent(clinicId)}/reprovision`,
         { method: "POST" },
       );
       const body = (await res.json().catch(() => ({}))) as {
@@ -41,25 +41,25 @@ export function ProvisionButton({ clinicId }: { clinicId: string }) {
   }
 
   return (
-    <>
+    <div className="flex flex-wrap items-center gap-3">
       <button
         onClick={handleClick}
         disabled={loading}
-        className="rounded-pill bg-accent px-5 py-2 text-xs font-medium text-white transition hover:bg-ink disabled:opacity-50"
+        className="rounded-pill bg-red-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
       >
         {loading ? (
           <span className="flex items-center gap-2">
             <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Provisioning…
+            Re-provisioning…
           </span>
         ) : (
-          "Provision"
+          "Re-provision"
         )}
       </button>
       {result ? (
         result.ok ? (
           <p className="text-xs text-emerald-700">
-            Provisioned.{" "}
+            Re-provisioned.{" "}
             {result.url ? (
               <a
                 href={result.url}
@@ -75,6 +75,6 @@ export function ProvisionButton({ clinicId }: { clinicId: string }) {
           <p className="text-xs text-red-600">{result.error}</p>
         )
       ) : null}
-    </>
+    </div>
   );
 }

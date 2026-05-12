@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 
 import { getCurrentAdminUser } from "@/src/lib/auth/current-user";
 import { getDb, schema } from "@/src/db/client";
@@ -84,7 +84,21 @@ export default async function ClinicDetailPage({ params }: { params: Params }) {
     );
   const pendingLeads = pendingRow?.value ?? 0;
 
+  const provisioningRuns = await db
+    .select()
+    .from(schema.provisioningRuns)
+    .where(eq(schema.provisioningRuns.clinicId, id))
+    .orderBy(desc(schema.provisioningRuns.createdAt))
+    .limit(10);
+
   const badges = getClinicBadges(clinic);
+
+  const RUN_STATUS_CLASS: Record<string, string> = {
+    pending: "bg-yellow-50 text-yellow-700",
+    running: "bg-blue-50 text-blue-700",
+    succeeded: "bg-emerald-50 text-emerald-700",
+    failed: "bg-red-50 text-red-700",
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-4xl flex-col px-6 py-16">
@@ -247,13 +261,43 @@ export default async function ClinicDetailPage({ params }: { params: Params }) {
       </section>
 
       <section className="mt-6 rounded-card border border-rule bg-white p-6">
-        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
-          Coming soon
-        </h2>
-        <p className="mt-3 text-sm text-ink-muted">
-          Provisioning run history, subscription management, and site preview
-          will appear here in a future update.
-        </p>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
+            Provisioning runs
+          </h2>
+          <Link
+            href={`/admin/clinics/${id}/edit`}
+            className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted underline underline-offset-4 hover:text-ink"
+          >
+            Edit site →
+          </Link>
+        </div>
+        {provisioningRuns.length === 0 ? (
+          <p className="mt-3 text-sm text-ink-muted">No provisioning runs yet.</p>
+        ) : (
+          <div className="mt-4 divide-y divide-rule">
+            {provisioningRuns.map((run) => (
+              <div key={run.id} className="flex items-start gap-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-ink">{run.step}</span>
+                    <span
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATUS_CLASS[run.status] ?? "bg-gray-50 text-gray-600"}`}
+                    >
+                      {run.status}
+                    </span>
+                  </div>
+                  {run.error && (
+                    <p className="mt-1 text-xs text-red-600 line-clamp-2">{run.error}</p>
+                  )}
+                </div>
+                <p className="shrink-0 text-xs text-ink-muted">
+                  {new Date(run.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
