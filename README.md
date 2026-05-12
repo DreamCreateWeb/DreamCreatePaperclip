@@ -132,6 +132,20 @@ Set `STRIPE_PRICE_CLINIC_MONTHLY` to the live price ID in Railway and Vercel bef
 
 Vercel project is linked to `DreamCreateWeb/DreamCreatePaperclip`. `main` deploys to production. Preview deploys are created automatically for PRs.
 
+## Google Drive integration
+
+Server-side helper: `src/lib/google/drive.ts`
+
+Exposes `listFolder(folderId)`, `getFile(fileId)`, and `downloadFile(fileId)` backed by the Dream Create service account.
+
+**Service account email:** `paperclip@dreamcreate-agent-workspace.iam.gserviceaccount.com`
+
+To give this app access to a Drive folder, share it with the SA email above (Viewer permission is sufficient for read-only access).
+
+**Env var:** `GOOGLE_SERVICE_ACCOUNT_JSON` — the full SA key JSON as a single string (already set in Vercel for all environments). Do **not** commit this value to git.
+
+This is the foundation for clinic logo/photo ingestion: clinics drop assets into a shared Drive folder; the platform reads them at provisioning time.
+
 ## Project status
 
 Roadmap and phase breakdown live on [DRE-15](/DRE/issues/DRE-15). This repo currently covers Phase 0 — foundation.
